@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
+    "client:dev": "npm start --prefix client",
+    "client:build": "npm run build --prefix client",
     "start": "node src/server.js",
     "extract": "node src/cli.js"
   },
@@ -13,12 +15,6 @@
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
     "multer": "^2.2.0",
-    "openai": "^4.104.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.7.0",
-    "vite": "^6.4.3"
+    "openai": "^4.104.0"
   }
 }

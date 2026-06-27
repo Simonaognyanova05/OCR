@@ -2,3 +2,5 @@ node_modules/
 .env
 outputs/
 uploads/
+dist/
+client/build/

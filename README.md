@@ -66,3 +66,19 @@ Read a saved result:
 ```powershell
 Invoke-RestMethod http://localhost:3000/api/documents/<document-id>
 ```
+
+## Run Frontend
+
+Start the React app created with `npx create-react-app`:
+
+```powershell
+npm run client:dev
+```
+
+Open:
+
+```text
+http://localhost:3001
+```
+
+The frontend uses `fetch` to call the backend at `http://localhost:3000`.
