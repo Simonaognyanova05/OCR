@@ -1,4 +1,4 @@
-export const expenseDocumentSchema = {
+const expenseDocumentSchema = {
   type: "object",
   additionalProperties: false,
   required: [
@@ -153,3 +153,8 @@ export const expenseDocumentSchema = {
     }
   }
 };
+
+module.exports = {
+  expenseDocumentSchema,
+};
+

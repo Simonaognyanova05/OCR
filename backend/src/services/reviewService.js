@@ -47,7 +47,7 @@ function getValue(object, path) {
   return path.split(".").reduce((current, key) => current?.[key], object);
 }
 
-export function applyReviewRules(documentData) {
+function applyReviewRules(documentData) {
   const reviewReasons = new Set();
 
   for (const reason of documentData.review_reasons || []) {
@@ -76,3 +76,8 @@ export function applyReviewRules(documentData) {
     review_reasons: [...reviewReasons]
   };
 }
+
+module.exports = {
+  applyReviewRules,
+};
+

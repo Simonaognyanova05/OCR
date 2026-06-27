@@ -9,6 +9,22 @@ backend/   Express API, OpenAI extraction, review rules
 frontend/  React app created with create-react-app
 ```
 
+Backend structure:
+
+```text
+backend/src/app.js                 Express app setup
+backend/src/server.js              Server entrypoint
+backend/src/config/                Environment/config loading
+backend/src/controllers/           Request/response handlers
+backend/src/routes/                API routes
+backend/src/services/              Business logic
+backend/src/models/                Data and schema definitions
+backend/src/middleware/            Express middleware
+backend/src/utils/                 Shared helpers
+```
+
+The backend uses CommonJS (`require` / `module.exports`).
+
 ## Product Scope
 
 The first scenario is focused on invoices and receipts for:
@@ -34,6 +50,24 @@ Next outputs planned for this scenario:
 - Excel
 - ERP/accounting system
 - PDF report
+
+## MVP Goal
+
+The first version follows one focused workflow:
+
+```text
+User uploads invoice/receipt
+-> system extracts accounting data
+-> user reviews and corrects the fields
+-> user exports Excel/PDF
+```
+
+Current implementation status:
+
+- Upload image document: done
+- Extract structured data: done
+- Review and correct extracted fields: in progress
+- Export Excel/PDF: planned next
 
 ## Setup
 
