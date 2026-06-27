@@ -1,22 +1,67 @@
 # OCR Documents
 
-Starter OCR pipeline for invoices, receipts, and expense documents using OpenAI vision + strict JSON schema.
+Production-oriented OCR pipeline for invoices and receipts using OpenAI vision + strict JSON schema.
+
+## Project Structure
+
+```text
+backend/   Express API, OpenAI extraction, review rules
+frontend/  React app created with create-react-app
+```
+
+## Product Scope
+
+The first scenario is focused on invoices and receipts for:
+
+- small businesses
+- accounting offices
+- freelancers
+- online stores
+
+The extractor targets:
+
+- invoice or receipt number
+- issue date
+- supplier
+- recipient
+- VAT
+- totals
+- currency
+- payment method
+
+Next outputs planned for this scenario:
+
+- Excel
+- ERP/accounting system
+- PDF report
 
 ## Setup
 
-1. Install dependencies:
+1. Install backend dependencies:
 
 ```powershell
-npm install
+npm install --prefix backend
 ```
 
-2. Create `.env` from the example:
+2. Install frontend dependencies:
 
 ```powershell
-Copy-Item .env.example .env
+npm install --prefix frontend
 ```
 
-3. Add your API key:
+3. Create `backend/.env` from the backend example:
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+```
+
+4. Optional: create `frontend/.env` so React starts on port 3001:
+
+```powershell
+Copy-Item frontend\.env.example frontend\.env
+```
+
+5. Add your API key:
 
 ```env
 OPENAI_API_KEY=sk-your-key-here
@@ -29,7 +74,7 @@ OPENAI_FALLBACK_MODEL=gpt-5.5
 Start with an image file:
 
 ```powershell
-npm run extract -- .\samples\invoice.jpg
+npm run backend:extract -- .\samples\invoice.jpg
 ```
 
 The result is printed in the terminal and saved to `outputs/<file-name>.json`.
@@ -43,7 +88,7 @@ PDF support can be added next by converting pages to images before extraction.
 Start the API:
 
 ```powershell
-npm run dev
+npm run backend:dev
 ```
 
 Health check:
@@ -72,7 +117,7 @@ Invoke-RestMethod http://localhost:3000/api/documents/<document-id>
 Start the React app created with `npx create-react-app`:
 
 ```powershell
-npm run client:dev
+npm run frontend:dev
 ```
 
 Open:

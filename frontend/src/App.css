@@ -102,6 +102,42 @@ button:disabled {
   color: #52627a;
 }
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-grid div {
+  border: 1px solid #dce2ee;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f9fbff;
+}
+
+.summary-grid span {
+  display: block;
+  margin-bottom: 6px;
+  color: #52627a;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.summary-grid strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.review-box {
+  margin-bottom: 16px;
+  border: 1px solid #f4c7c3;
+  border-radius: 8px;
+  padding: 12px;
+  color: #912018;
+  background: #fff4f2;
+}
+
 pre {
   max-height: 620px;
   overflow: auto;
@@ -124,5 +160,9 @@ pre {
 
   .status {
     white-space: normal;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
   }
 }

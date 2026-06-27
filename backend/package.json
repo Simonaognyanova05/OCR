@@ -1,0 +1,19 @@
+{
+  "name": "ocr-documents-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "extract": "node src/cli.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "openai": "^4.104.0"
+  }
+}
+

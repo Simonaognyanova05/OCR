@@ -4,3 +4,10 @@ outputs/
 uploads/
 dist/
 client/build/
+backend/node_modules/
+backend/uploads/
+backend/outputs/
+backend/.env
+frontend/node_modules/
+frontend/build/
+frontend/.env.local

@@ -54,10 +54,15 @@ export async function extractExpenseDocument(filePath) {
           {
             type: "input_text",
             text: [
-              "You extract structured data from invoices, receipts, and expense documents.",
+              "You extract structured data from invoices and receipts for accounting workflows.",
+              "The primary customers are small businesses, accountants, freelancers, and online stores.",
+              "Focus on invoice number, date, supplier, recipient, VAT, totals, currency, and payment method.",
               "Return only data that is visible in the document.",
               "Do not guess missing values. Use null when a value is missing or uncertain.",
-              "Set needs_review to true when total, date, or merchant name is missing."
+              "Use ISO currency codes such as BGN, EUR, or USD when possible.",
+              "Normalize visible dates to YYYY-MM-DD.",
+              "Set needs_review to true when document number, issue date, supplier name, total, currency, or VAT data is missing or inconsistent.",
+              "Use only these review_reasons codes when needed: document_number_missing, issue_date_missing, supplier_name_missing, recipient_name_missing, currency_missing, subtotal_missing, total_missing, vat_missing, payment_method_missing, amount_mismatch, low_confidence, unclear_image."
             ].join(" ")
           }
         ]
@@ -67,7 +72,7 @@ export async function extractExpenseDocument(filePath) {
         content: [
           {
             type: "input_text",
-            text: "Extract the expense document data from this image."
+            text: "Extract accounting-ready data from this invoice or receipt image."
           },
           {
             type: "input_image",
@@ -88,4 +93,3 @@ export async function extractExpenseDocument(filePath) {
 
   return normalizeResponse(response);
 }
-

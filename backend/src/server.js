@@ -5,6 +5,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { config } from "./config.js";
 import { extractExpenseDocument } from "./extract.js";
+import { applyReviewRules } from "./review.js";
 import {
   createDocumentId,
   ensureStorage,
@@ -63,7 +64,7 @@ app.post("/api/documents/extract", upload.single("document"), async (req, res, n
     }
 
     const documentId = createDocumentId();
-    const extracted = await extractExpenseDocument(req.file.path);
+    const extracted = applyReviewRules(await extractExpenseDocument(req.file.path));
 
     const payload = {
       id: documentId,
