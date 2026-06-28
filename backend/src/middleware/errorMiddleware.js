@@ -3,7 +3,7 @@ function errorMiddleware(error, _req, res, _next) {
 
   res.status(statusCode).json({
     error: {
-      message: error.message || "Unexpected server error"
+      message: error.message || "Неочаквана сървърна грешка"
     }
   });
 }
@@ -11,4 +11,3 @@ function errorMiddleware(error, _req, res, _next) {
 module.exports = {
   errorMiddleware,
 };
-

@@ -27,7 +27,7 @@ const uploadDocument = multer({
   },
   fileFilter(_req, file, callback) {
     if (!allowedMimeTypes.has(file.mimetype)) {
-      callback(new HttpError(400, "Unsupported file type. Upload PNG, JPG, JPEG, or WEBP."));
+      callback(new HttpError(400, "Неподдържан файлов тип. Качи PNG, JPG, JPEG или WEBP."));
       return;
     }
 
@@ -38,4 +38,3 @@ const uploadDocument = multer({
 module.exports = {
   uploadDocument,
 };
-

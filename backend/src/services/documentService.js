@@ -4,22 +4,19 @@ const { HttpError } = require("../utils/httpError");
 const { extractExpenseDocument } = require("./ocrService");
 const { applyReviewRules } = require("./reviewService");
 const {
-  createDocumentId,
-  readExtractionResult,
-  saveExtractionResult,
-  updateExtractionResult
-} = require("./storageService");
+  createDocument,
+  findDocumentById,
+  updateReviewedDocument
+} = require("./documentRepository");
 
 async function extractDocument(file) {
   if (!file) {
-    throw new HttpError(400, "Missing file. Send multipart/form-data with a document field.");
+    throw new HttpError(400, "Липсва файл. Изпрати multipart/form-data с поле document.");
   }
 
-  const documentId = createDocumentId();
   const extracted = applyReviewRules(await extractExpenseDocument(file.path));
 
   const payload = {
-    id: documentId,
     original_name: file.originalname,
     stored_file: path.basename(file.path),
     model: config.model,
@@ -28,27 +25,21 @@ async function extractDocument(file) {
     data: extracted
   };
 
-  await saveExtractionResult(documentId, payload);
-  return payload;
+  return createDocument(payload);
 }
 
 async function getDocument(documentId) {
-  return readExtractionResult(documentId);
+  return findDocumentById(documentId);
 }
 
 async function saveReviewedDocument(documentId, data) {
   if (!data) {
-    throw new HttpError(400, "Missing reviewed document data.");
+    throw new HttpError(400, "Липсват прегледани данни за документа.");
   }
 
   const reviewedData = applyReviewRules(data);
 
-  return updateExtractionResult(documentId, (current) => ({
-    ...current,
-    status: reviewedData.needs_review ? "needs_review" : "reviewed",
-    reviewed_at: new Date().toISOString(),
-    data: reviewedData
-  }));
+  return updateReviewedDocument(documentId, reviewedData);
 }
 
 module.exports = {
@@ -56,4 +47,3 @@ module.exports = {
   getDocument,
   saveReviewedDocument,
 };
-

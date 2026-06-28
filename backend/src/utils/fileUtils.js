@@ -13,7 +13,7 @@ function getImageMimeType(filePath) {
   const mimeType = mimeTypes[ext];
 
   if (!mimeType) {
-    throw new Error(`Unsupported file type "${ext}". Start with PNG, JPG, JPEG, or WEBP.`);
+    throw new Error(`Неподдържан файлов тип "${ext}". Използвай PNG, JPG, JPEG или WEBP.`);
   }
 
   return mimeType;
@@ -29,4 +29,3 @@ module.exports = {
   getImageMimeType,
   imageToDataUrl,
 };
-

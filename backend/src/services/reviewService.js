@@ -1,3 +1,6 @@
+const { sanitizeDocumentDataForStorage } = require("../utils/documentSanitizer");
+const { isLikelyGarbledText } = require("../utils/textQuality");
+
 const requiredAccountingFields = [
   ["document_number", "document_number_missing"],
   ["issue_date", "issue_date_missing"],
@@ -49,8 +52,28 @@ function getValue(object, path) {
 
 function applyReviewRules(documentData) {
   const reviewReasons = new Set();
+  const sanitizedDocumentData = sanitizeDocumentDataForStorage(documentData);
+  const cleanedDocumentData = {
+    ...sanitizedDocumentData,
+    line_items: (sanitizedDocumentData.line_items || []).map((item) => {
+      const description = item.description_bg ?? item.description ?? item.description_raw;
 
-  for (const reason of documentData.review_reasons || []) {
+      if (!isLikelyGarbledText(description)) {
+        return item;
+      }
+
+      reviewReasons.add("unclear_image");
+
+      return {
+        ...item,
+        description: null,
+        description_bg: null,
+        description_raw: null
+      };
+    })
+  };
+
+  for (const reason of cleanedDocumentData.review_reasons || []) {
     const normalizedReason = reviewReasonAliases[reason] || reason;
 
     if (allowedReviewReasons.has(normalizedReason)) {
@@ -59,20 +82,20 @@ function applyReviewRules(documentData) {
   }
 
   for (const [path, reason] of requiredAccountingFields) {
-    const value = getValue(documentData, path);
+    const value = getValue(cleanedDocumentData, path);
 
     if (value === null || value === undefined || value === "") {
       reviewReasons.add(reason);
     }
   }
 
-  if (documentData.document_type === "invoice" && !documentData.recipient?.name) {
+  if (cleanedDocumentData.document_type === "invoice" && !cleanedDocumentData.recipient?.name) {
     reviewReasons.add("recipient_name_missing");
   }
 
   return {
-    ...documentData,
-    needs_review: reviewReasons.size > 0 || documentData.needs_review,
+    ...cleanedDocumentData,
+    needs_review: reviewReasons.size > 0 || cleanedDocumentData.needs_review,
     review_reasons: [...reviewReasons]
   };
 }
@@ -80,4 +103,3 @@ function applyReviewRules(documentData) {
 module.exports = {
   applyReviewRules,
 };
-

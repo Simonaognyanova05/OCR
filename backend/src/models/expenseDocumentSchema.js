@@ -134,7 +134,8 @@ const expenseDocumentSchema = {
         type: "object",
         additionalProperties: false,
         required: [
-          "description",
+          "description_bg",
+          "description_raw",
           "quantity",
           "unit_price_without_vat",
           "vat_rate",
@@ -142,7 +143,14 @@ const expenseDocumentSchema = {
           "total_with_vat"
         ],
         properties: {
-          description: { type: ["string", "null"] },
+          description_bg: {
+            type: ["string", "null"],
+            description: "Clean Bulgarian display name for the product/service. Use null if unreadable."
+          },
+          description_raw: {
+            type: ["string", "null"],
+            description: "Original visible description only when clearly readable. Use null if unreadable."
+          },
           quantity: { type: ["number", "null"] },
           unit_price_without_vat: { type: ["number", "null"] },
           vat_rate: { type: ["number", "null"] },
@@ -157,4 +165,3 @@ const expenseDocumentSchema = {
 module.exports = {
   expenseDocumentSchema,
 };
-

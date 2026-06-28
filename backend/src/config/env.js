@@ -11,9 +11,12 @@ const config = {
   apiKey: process.env.OPENAI_API_KEY,
   model: process.env.OPENAI_MODEL || "gpt-5.4-mini",
   fallbackModel: process.env.OPENAI_FALLBACK_MODEL || "gpt-5.5",
+  mongodbUri: process.env.MONGODB_URI,
   port: Number(process.env.PORT || 3000),
   uploadDir: path.resolve(backendDir, process.env.UPLOAD_DIR || "uploads"),
   outputDir: path.resolve(backendDir, process.env.OUTPUT_DIR || "outputs"),
+  pdfFontRegularPath: process.env.PDF_FONT_REGULAR_PATH,
+  pdfFontBoldPath: process.env.PDF_FONT_BOLD_PATH,
 };
 
 function assertConfig() {
@@ -22,8 +25,14 @@ function assertConfig() {
   }
 }
 
+function assertDatabaseConfig() {
+  if (!config.mongodbUri) {
+    throw new Error("Missing MONGODB_URI. Add your MongoDB connection string to backend/.env.");
+  }
+}
+
 module.exports = {
   config,
   assertConfig,
+  assertDatabaseConfig,
 };
-

@@ -18,6 +18,22 @@ const reviewReasonLabels = {
   unclear_image: 'Изображението не е достатъчно ясно',
 };
 
+const documentTypeLabels = {
+  invoice: 'Фактура',
+  receipt: 'Касова бележка',
+  credit_note: 'Кредитно известие',
+  other: 'Друг документ',
+};
+
+const paymentMethodLabels = {
+  cash: 'В брой',
+  card: 'Карта',
+  bank_transfer: 'Банков превод',
+  online: 'Онлайн',
+  mixed: 'Смесено',
+  unknown: 'Неизвестно',
+};
+
 function getFieldValue(object, path) {
   return path.split('.').reduce((current, key) => current?.[key], object);
 }
@@ -68,7 +84,7 @@ function Field({ label, path, draft, onChange, type = 'text' }) {
   );
 }
 
-function SelectField({ label, path, draft, onChange, options }) {
+function SelectField({ label, path, draft, onChange, options, labels = {} }) {
   const value = getFieldValue(draft, path) ?? '';
 
   return (
@@ -78,7 +94,7 @@ function SelectField({ label, path, draft, onChange, options }) {
         <option value="">-</option>
         {options.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {labels[option] || option}
           </option>
         ))}
       </select>
@@ -133,7 +149,7 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data?.error?.message || 'Upload failed.');
+        throw new Error(data?.error?.message || 'Извличането не беше успешно.');
       }
 
       setResult(data);
@@ -166,7 +182,7 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data?.error?.message || 'Save failed.');
+        throw new Error(data?.error?.message || 'Записът не беше успешен.');
       }
 
       setResult(data);
@@ -177,6 +193,15 @@ function App() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function downloadExport(type) {
+    if (!result?.id) {
+      setError('Първо извлечи документ.');
+      return;
+    }
+
+    window.location.href = `${API_BASE_URL}/api/documents/${result.id}/export/${type}?t=${Date.now()}`;
   }
 
   const extracted = draft;
@@ -190,7 +215,7 @@ function App() {
         </div>
 
         <div className={health?.ok ? 'status ok' : 'status'}>
-          {health?.ok ? `Backend online: ${health.model}` : 'Backend offline'}
+          {health?.ok ? `Backend активен: ${health.model}` : 'Backend не е активен'}
         </div>
       </section>
 
@@ -198,7 +223,7 @@ function App() {
         <span>1. Качване</span>
         <span>2. OCR извличане</span>
         <span>3. Преглед и корекция</span>
-        <span className="muted">4. Excel/PDF export</span>
+        <span className="muted">4. Excel/PDF експорт</span>
       </section>
 
       <section className="workspace">
@@ -222,12 +247,22 @@ function App() {
             {loading ? 'Извличане...' : 'Извлечи данни'}
           </button>
 
-          <button type="button" disabled className="secondary-button">
-            Export Excel
+          <button
+            type="button"
+            disabled={!result?.id}
+            className="secondary-button"
+            onClick={() => downloadExport('excel')}
+          >
+            Експорт Excel
           </button>
 
-          <button type="button" disabled className="secondary-button">
-            Export PDF
+          <button
+            type="button"
+            disabled={!result?.id}
+            className="secondary-button"
+            onClick={() => downloadExport('pdf')}
+          >
+            Експорт PDF
           </button>
 
           {error && <p className="error">{error}</p>}
@@ -241,7 +276,7 @@ function App() {
               <div className="summary-grid">
                 <div>
                   <span>Тип</span>
-                  <strong>{extracted.document_type || '-'}</strong>
+                  <strong>{documentTypeLabels[extracted.document_type] || extracted.document_type || '-'}</strong>
                 </div>
                 <div>
                   <span>Номер</span>
@@ -274,6 +309,7 @@ function App() {
                   draft={draft}
                   onChange={updateDraft}
                   options={['invoice', 'receipt', 'credit_note', 'other']}
+                  labels={documentTypeLabels}
                 />
                 <Field label="Номер" path="document_number" draft={draft} onChange={updateDraft} />
                 <Field label="Дата" path="issue_date" type="date" draft={draft} onChange={updateDraft} />
@@ -295,6 +331,7 @@ function App() {
                   draft={draft}
                   onChange={updateDraft}
                   options={['cash', 'card', 'bank_transfer', 'online', 'mixed', 'unknown']}
+                  labels={paymentMethodLabels}
                 />
                 <Field label="IBAN" path="payment.iban" draft={draft} onChange={updateDraft} />
                 <Field label="Банка" path="payment.bank_name" draft={draft} onChange={updateDraft} />

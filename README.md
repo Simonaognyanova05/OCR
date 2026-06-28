@@ -1,129 +1,124 @@
-# OCR Documents
+# OCR Документи
 
-Production-oriented OCR pipeline for invoices and receipts using OpenAI vision + strict JSON schema.
+Production-ready MVP за OCR обработка на фактури и касови бележки чрез OpenAI vision, строг JSON schema формат, MongoDB и експорт към Excel/PDF.
 
-## Project Structure
+## Структура
 
 ```text
-backend/   Express API, OpenAI extraction, review rules
-frontend/  React app created with create-react-app
+backend/   Express API, OpenAI извличане, MongoDB, review правила, експорти
+frontend/  React приложение, създадено с npx create-react-app
 ```
 
-Backend structure:
+Backend структура:
 
 ```text
 backend/src/app.js                 Express app setup
-backend/src/server.js              Server entrypoint
-backend/src/config/                Environment/config loading
-backend/src/controllers/           Request/response handlers
+backend/src/server.js              стартова точка на сървъра
+backend/src/config/                настройки и връзка с базата
+backend/src/controllers/           request/response handlers
 backend/src/routes/                API routes
-backend/src/services/              Business logic
-backend/src/models/                Data and schema definitions
+backend/src/services/              бизнес логика
+backend/src/models/                Mongoose модели и OCR schema
 backend/src/middleware/            Express middleware
-backend/src/utils/                 Shared helpers
+backend/src/utils/                 общи помощни функции
 ```
 
-The backend uses CommonJS (`require` / `module.exports`).
+Backend-ът използва CommonJS (`require` / `module.exports`).
 
-## Product Scope
+## MVP Цел
 
-The first scenario is focused on invoices and receipts for:
-
-- small businesses
-- accounting offices
-- freelancers
-- online stores
-
-The extractor targets:
-
-- invoice or receipt number
-- issue date
-- supplier
-- recipient
-- VAT
-- totals
-- currency
-- payment method
-
-Next outputs planned for this scenario:
-
-- Excel
-- ERP/accounting system
-- PDF report
-
-## MVP Goal
-
-The first version follows one focused workflow:
+Първата версия следва един ясен сценарий:
 
 ```text
-User uploads invoice/receipt
--> system extracts accounting data
--> user reviews and corrects the fields
--> user exports Excel/PDF
+Потребителят качва фактура/касова бележка
+-> системата извлича счетоводни данни
+-> потребителят преглежда и коригира полетата
+-> потребителят експортира Excel/PDF
 ```
 
-Current implementation status:
+Фокусът е върху:
 
-- Upload image document: done
-- Extract structured data: done
-- Review and correct extracted fields: in progress
-- Export Excel/PDF: planned next
+- малки фирми
+- счетоводни къщи
+- самонаети лица
+- онлайн магазини
 
-## Setup
+OCR извлича:
 
-1. Install backend dependencies:
+- номер на фактура/касова бележка
+- дата
+- доставчик
+- получател
+- ДДС
+- суми
+- валута
+- начин на плащане
+- редове/артикули, когато са четими
+
+## Настройка
+
+1. Инсталирай backend зависимостите:
 
 ```powershell
 npm install --prefix backend
 ```
 
-2. Install frontend dependencies:
+2. Инсталирай frontend зависимостите:
 
 ```powershell
 npm install --prefix frontend
 ```
 
-3. Create `backend/.env` from the backend example:
+3. Създай `backend/.env` от примерния файл:
 
 ```powershell
 Copy-Item backend\.env.example backend\.env
 ```
 
-4. Optional: create `frontend/.env` so React starts on port 3001:
+4. По желание създай `frontend/.env`, за да стартира React на порт 3001:
 
 ```powershell
 Copy-Item frontend\.env.example frontend\.env
 ```
 
-5. Add your API key:
+5. Попълни ключовете в `backend/.env`:
 
 ```env
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_MODEL=gpt-5.4-mini
 OPENAI_FALLBACK_MODEL=gpt-5.5
+MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/ocr-documents
+PDF_FONT_REGULAR_PATH=C:\Windows\Fonts\arial.ttf
+PDF_FONT_BOLD_PATH=C:\Windows\Fonts\arialbd.ttf
 ```
 
-## Run CLI
+## Стартиране
 
-Start with an image file:
-
-```powershell
-npm run backend:extract -- .\samples\invoice.jpg
-```
-
-The result is printed in the terminal and saved to `outputs/<file-name>.json`.
-
-Supported starter formats: PNG, JPG, JPEG, WEBP.
-
-PDF support can be added next by converting pages to images before extraction.
-
-## Run Backend
-
-Start the API:
+Backend:
 
 ```powershell
 npm run backend:dev
 ```
+
+Frontend:
+
+```powershell
+npm run frontend:dev
+```
+
+Отвори:
+
+```text
+http://localhost:3001
+```
+
+Frontend-ът използва `fetch` към backend-а на:
+
+```text
+http://localhost:3000
+```
+
+## API Проверки
 
 Health check:
 
@@ -131,7 +126,7 @@ Health check:
 Invoke-RestMethod http://localhost:3000/health
 ```
 
-Extract a document:
+Извличане на документ:
 
 ```powershell
 Invoke-RestMethod `
@@ -140,24 +135,19 @@ Invoke-RestMethod `
   -Form @{ document = Get-Item .\samples\invoice.jpg }
 ```
 
-Read a saved result:
+Прочитане на запазен резултат:
 
 ```powershell
 Invoke-RestMethod http://localhost:3000/api/documents/<document-id>
 ```
 
-## Run Frontend
-
-Start the React app created with `npx create-react-app`:
-
-```powershell
-npm run frontend:dev
-```
-
-Open:
+Експорт:
 
 ```text
-http://localhost:3001
+GET http://localhost:3000/api/documents/<document-id>/export/excel
+GET http://localhost:3000/api/documents/<document-id>/export/pdf
 ```
 
-The frontend uses `fetch` to call the backend at `http://localhost:3000`.
+## Бележка За Полетата
+
+Потребителските етикети, Excel/PDF експортите и съобщенията са на български. Вътрешните JSON/MongoDB ключове остават на английски, защото те са технически договор между frontend, backend, schema и базата.
