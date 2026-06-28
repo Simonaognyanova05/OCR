@@ -85,6 +85,48 @@ function getPaymentMethodLabel(method) {
   return paymentMethodLabels[method] || method;
 }
 
+function getTaxOrVatNumber(data, party) {
+  if (party === "supplier") {
+    return (
+      getDataValue(data, "supplierVatNumber", "supplier.vat_id") ||
+      getDataValue(data, "supplierTaxNumber", "supplier.tax_id") ||
+      getDataValue(data, "supplierEik", "supplier.eik")
+    );
+  }
+
+  return (
+    getDataValue(data, "recipientVatNumber", "recipient.vat_id") ||
+    getDataValue(data, "recipientTaxNumber", "recipient.tax_id") ||
+    getDataValue(data, "recipientEik", "recipient.eik")
+  );
+}
+
+function buildAccountingExportRow(document) {
+  const data = document.data || {};
+
+  return {
+    issueDate: getDataValue(data, "issueDate", "issue_date"),
+    documentType: getDocumentTypeLabel(getDataValue(data, "documentType", "document_type")),
+    documentNumber: getDataValue(data, "documentNumber", "document_number"),
+    supplierName: getDataValue(data, "supplierName", "supplier.name"),
+    supplierTaxNumber: getTaxOrVatNumber(data, "supplier"),
+    recipientName: getDataValue(data, "recipientName", "recipient.name"),
+    recipientTaxNumber: getTaxOrVatNumber(data, "recipient"),
+    netAmount: getDataValue(data, "netAmount", "amounts.subtotal_without_vat"),
+    vatAmount: getDataValue(data, "vatAmount", "amounts.total_vat") ?? data.vat?.amount,
+    totalAmount: getDataValue(data, "totalAmount", "amounts.total_with_vat"),
+    currency: data.currency,
+    paymentMethod: getPaymentMethodLabel(getDataValue(data, "paymentMethod", "payment.method")),
+    category: data.category
+  };
+}
+
+function formatAccountingCellValue(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "number") return value;
+  return cleanDisplayText(value);
+}
+
 function getReviewReasonLabel(reason) {
   return reviewReasonLabels[reason] || reason;
 }
@@ -179,36 +221,55 @@ function drawLineItem(pdf, fonts, item, index) {
 async function generateExcelExport(documentId, companyId) {
   const document = await findDocumentById(documentId, companyId);
   const workbook = new ExcelJS.Workbook();
-  const summarySheet = workbook.addWorksheet("Обобщение");
-  const itemsSheet = workbook.addWorksheet("Редове");
+  const documentsSheet = workbook.addWorksheet("Документи");
 
-  summarySheet.columns = [
-    { header: "Поле", key: "field", width: 28 },
-    { header: "Стойност", key: "value", width: 42 }
+  workbook.creator = "OCR Documents";
+  workbook.created = new Date();
+
+  documentsSheet.columns = [
+    { header: "Дата", key: "issueDate", width: 14 },
+    { header: "Тип документ", key: "documentType", width: 18 },
+    { header: "Номер", key: "documentNumber", width: 18 },
+    { header: "Доставчик", key: "supplierName", width: 34 },
+    { header: "ЕИК/ДДС номер доставчик", key: "supplierTaxNumber", width: 26 },
+    { header: "Получател", key: "recipientName", width: 34 },
+    { header: "ЕИК/ДДС номер получател", key: "recipientTaxNumber", width: 26 },
+    { header: "Основа", key: "netAmount", width: 14 },
+    { header: "ДДС", key: "vatAmount", width: 14 },
+    { header: "Обща сума", key: "totalAmount", width: 16 },
+    { header: "Валута", key: "currency", width: 10 },
+    { header: "Начин на плащане", key: "paymentMethod", width: 20 },
+    { header: "Категория", key: "category", width: 22 }
   ];
 
-  for (const [field, value] of getSummaryRows(document)) {
-    summarySheet.addRow({ field, value: valueOrEmpty(value) });
-  }
+  documentsSheet.addRow(
+    Object.fromEntries(
+      Object.entries(buildAccountingExportRow(document)).map(([key, value]) => [
+        key,
+        formatAccountingCellValue(value)
+      ])
+    )
+  );
 
-  summarySheet.getRow(1).font = { bold: true };
-  itemsSheet.columns = [
-    { header: "Име", key: "name", width: 42 },
-    { header: "Количество", key: "quantity", width: 14 },
-    { header: "Ед. цена", key: "unitPrice", width: 18 },
-    { header: "Общо", key: "totalPrice", width: 18 }
-  ];
+  documentsSheet.views = [{ state: "frozen", ySplit: 1 }];
+  documentsSheet.autoFilter = {
+    from: "A1",
+    to: "M1"
+  };
 
-  for (const item of getItems(document.data || {})) {
-    itemsSheet.addRow({
-      name: valueOrEmpty(item.name),
-      quantity: valueOrEmpty(item.quantity),
-      unitPrice: valueOrEmpty(item.unitPrice),
-      totalPrice: valueOrEmpty(item.totalPrice)
-    });
-  }
+  const headerRow = documentsSheet.getRow(1);
+  headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  headerRow.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF1F4E78" }
+  };
+  headerRow.alignment = { vertical: "middle" };
 
-  itemsSheet.getRow(1).font = { bold: true };
+  documentsSheet.getRow(2).alignment = { vertical: "top", wrapText: true };
+  ["H", "I", "J"].forEach((column) => {
+    documentsSheet.getColumn(column).numFmt = "#,##0.00";
+  });
 
   const buffer = await workbook.xlsx.writeBuffer();
   await markDocumentExported(documentId, "excel", companyId);
