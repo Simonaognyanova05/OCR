@@ -7,6 +7,16 @@ const documentSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true
+    },
+    uploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
     storedFile: {
       type: String,
       required: true
@@ -55,8 +65,8 @@ const documentSchema = new mongoose.Schema(
 );
 
 documentSchema.index({ status: 1, createdAt: -1 });
+documentSchema.index({ companyId: 1, createdAt: -1 });
 documentSchema.index({ "data.document_number": 1 });
 documentSchema.index({ "data.supplier.name": 1 });
 
 module.exports = mongoose.model("Document", documentSchema);
-

@@ -60,11 +60,40 @@
 }
 
 .upload-panel,
-.result-panel {
+.result-panel,
+.auth-panel,
+.company-panel,
+.account-bar {
   border: 1px solid #dce2ee;
   border-radius: 8px;
   background: #fff;
   padding: 20px;
+}
+
+.auth-panel,
+.company-panel,
+.account-bar {
+  margin-bottom: 20px;
+}
+
+.auth-tabs,
+.account-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.auth-tabs {
+  justify-content: flex-start;
+  margin-bottom: 16px;
+}
+
+.account-bar span {
+  display: block;
+  margin-top: 4px;
+  color: #52627a;
+  font-size: 14px;
 }
 
 .upload-panel {

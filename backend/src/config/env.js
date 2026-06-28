@@ -12,6 +12,7 @@ const config = {
   model: process.env.OPENAI_MODEL || "gpt-5.4-mini",
   fallbackModel: process.env.OPENAI_FALLBACK_MODEL || "gpt-5.5",
   mongodbUri: process.env.MONGODB_URI,
+  authSecret: process.env.AUTH_SECRET || "dev-only-change-this-auth-secret",
   port: Number(process.env.PORT || 3000),
   uploadDir: path.resolve(backendDir, process.env.UPLOAD_DIR || "uploads"),
   outputDir: path.resolve(backendDir, process.env.OUTPUT_DIR || "outputs"),
@@ -21,13 +22,13 @@ const config = {
 
 function assertConfig() {
   if (!config.apiKey) {
-    throw new Error("Missing OPENAI_API_KEY. Copy backend/.env.example to backend/.env and add your API key.");
+    throw new Error("Липсва OPENAI_API_KEY. Копирай backend/.env.example към backend/.env и добави API ключ.");
   }
 }
 
 function assertDatabaseConfig() {
   if (!config.mongodbUri) {
-    throw new Error("Missing MONGODB_URI. Add your MongoDB connection string to backend/.env.");
+    throw new Error("Липсва MONGODB_URI. Добави MongoDB connection string в backend/.env.");
   }
 }
 

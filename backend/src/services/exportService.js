@@ -186,8 +186,8 @@ function drawLineItem(pdf, fonts, item, index) {
   pdf.y = startY + rowHeight;
 }
 
-async function generateExcelExport(documentId) {
-  const document = await findDocumentById(documentId);
+async function generateExcelExport(documentId, companyId) {
+  const document = await findDocumentById(documentId, companyId);
   const workbook = new ExcelJS.Workbook();
   const summarySheet = workbook.addWorksheet("Обобщение");
   const itemsSheet = workbook.addWorksheet("Редове");
@@ -226,7 +226,7 @@ async function generateExcelExport(documentId) {
   itemsSheet.getRow(1).font = { bold: true };
 
   const buffer = await workbook.xlsx.writeBuffer();
-  await markDocumentExported(documentId, "excel");
+  await markDocumentExported(documentId, "excel", companyId);
 
   return {
     buffer: Buffer.from(buffer),
@@ -271,10 +271,10 @@ function generatePdfBuffer(document) {
   });
 }
 
-async function generatePdfExport(documentId) {
-  const document = await findDocumentById(documentId);
+async function generatePdfExport(documentId, companyId) {
+  const document = await findDocumentById(documentId, companyId);
   const buffer = await generatePdfBuffer(document);
-  await markDocumentExported(documentId, "pdf");
+  await markDocumentExported(documentId, "pdf", companyId);
 
   return {
     buffer,

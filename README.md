@@ -55,6 +55,27 @@ OCR извлича:
 - начин на плащане
 - редове/артикули, когато са четими
 
+## Модул 1: Потребители И Фирми
+
+Добавени са:
+
+- регистрация и вход
+- фирмен профил
+- роли: `owner`, `accountant`, `employee`
+- месечен лимит на документи според плана
+- колекции: `User`, `Company`, `Membership`
+
+Планове и лимити:
+
+```text
+free      50 документа / месец
+starter   200 документа / месец
+pro       1000 документа / месец
+business  5000 документа / месец
+```
+
+Документите вече се записват към конкретна фирма и потребител. OCR, прегледът и експортите изискват `Authorization: Bearer <token>`.
+
 ## Настройка
 
 1. Инсталирай backend зависимостите:
@@ -126,12 +147,42 @@ Health check:
 Invoke-RestMethod http://localhost:3000/health
 ```
 
+Регистрация:
+
+```powershell
+Invoke-RestMethod `
+  -Uri http://localhost:3000/api/auth/register `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"name":"Иван Иванов","email":"ivan@example.com","password":"password123","company_name":"Моята фирма"}'
+```
+
+Вход:
+
+```powershell
+Invoke-RestMethod `
+  -Uri http://localhost:3000/api/auth/login `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"email":"ivan@example.com","password":"password123"}'
+```
+
+Фирмен профил:
+
+```text
+GET  http://localhost:3000/api/company
+PUT  http://localhost:3000/api/company
+GET  http://localhost:3000/api/company/memberships
+POST http://localhost:3000/api/company/memberships
+```
+
 Извличане на документ:
 
 ```powershell
 Invoke-RestMethod `
   -Uri http://localhost:3000/api/documents/extract `
   -Method Post `
+  -Headers @{ Authorization = "Bearer <token>" } `
   -Form @{ document = Get-Item .\samples\invoice.jpg }
 ```
 

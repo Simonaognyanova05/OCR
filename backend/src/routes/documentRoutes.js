@@ -9,13 +9,14 @@ const {
   exportPdfHandler
 } = require("../controllers/exportController");
 const { uploadDocument } = require("../middleware/uploadMiddleware");
+const { requireAuth, requireRole } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/documents/extract", uploadDocument.single("document"), extractDocumentHandler);
-router.put("/documents/:id/review", saveReviewHandler);
-router.get("/documents/:id/export/excel", exportExcelHandler);
-router.get("/documents/:id/export/pdf", exportPdfHandler);
-router.get("/documents/:id", getDocumentHandler);
+router.post("/documents/extract", requireAuth, uploadDocument.single("document"), extractDocumentHandler);
+router.put("/documents/:id/review", requireAuth, requireRole(["owner", "accountant", "employee"]), saveReviewHandler);
+router.get("/documents/:id/export/excel", requireAuth, requireRole(["owner", "accountant"]), exportExcelHandler);
+router.get("/documents/:id/export/pdf", requireAuth, requireRole(["owner", "accountant"]), exportPdfHandler);
+router.get("/documents/:id", requireAuth, getDocumentHandler);
 
 module.exports = router;

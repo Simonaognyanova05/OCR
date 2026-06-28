@@ -2,6 +2,7 @@ import './App.css';
 import { useEffect, useState } from 'react';
 
 const API_BASE_URL = 'http://localhost:3000';
+const AUTH_STORAGE_KEY = 'ocr-auth';
 
 const reviewReasonLabels = {
   document_number_missing: 'Липсва номер на документа',
@@ -62,10 +63,6 @@ function parseValue(value, type) {
     return Number.isFinite(parsed) ? parsed : null;
   }
 
-  if (type === 'boolean') {
-    return value === 'true';
-  }
-
   return value;
 }
 
@@ -102,8 +99,25 @@ function SelectField({ label, path, draft, onChange, options, labels = {} }) {
   );
 }
 
+function getStoredAuth() {
+  try {
+    return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY));
+  } catch {
+    return null;
+  }
+}
+
 function App() {
   const [health, setHealth] = useState(null);
+  const [auth, setAuth] = useState(getStoredAuth);
+  const [authMode, setAuthMode] = useState('login');
+  const [authForm, setAuthForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    company_name: '',
+  });
+  const [companyDraft, setCompanyDraft] = useState(null);
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
   const [draft, setDraft] = useState(null);
@@ -119,8 +133,107 @@ function App() {
       .catch(() => setHealth({ ok: false }));
   }, []);
 
+  useEffect(() => {
+    if (auth?.company) {
+      setCompanyDraft(auth.company);
+    }
+  }, [auth]);
+
+  function authHeaders(extraHeaders = {}) {
+    return {
+      ...extraHeaders,
+      Authorization: `Bearer ${auth.token}`,
+    };
+  }
+
+  function saveAuth(nextAuth) {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuth));
+    setAuth(nextAuth);
+    setCompanyDraft(nextAuth.company);
+  }
+
+  function logout() {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    setAuth(null);
+    setResult(null);
+    setDraft(null);
+    setNotice('');
+    setError('');
+  }
+
   function updateDraft(path, value) {
     setDraft((currentDraft) => setFieldValue(currentDraft, path, value));
+  }
+
+  function updateCompanyDraft(path, value) {
+    setCompanyDraft((currentDraft) => ({
+      ...currentDraft,
+      [path]: value,
+    }));
+  }
+
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    setNotice('');
+
+    try {
+      const endpoint = authMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(authForm),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error?.message || 'Входът не беше успешен.');
+      }
+
+      saveAuth(data);
+      setNotice(authMode === 'register' ? 'Регистрацията е успешна.' : 'Успешен вход.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCompanySave() {
+    if (!companyDraft) return;
+
+    setSaving(true);
+    setError('');
+    setNotice('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/company`, {
+        method: 'PUT',
+        headers: authHeaders({
+          'Content-Type': 'application/json',
+        }),
+        body: JSON.stringify(companyDraft),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error?.message || 'Фирменият профил не беше запазен.');
+      }
+
+      const nextAuth = {
+        ...auth,
+        company: data.company,
+      };
+      saveAuth(nextAuth);
+      setNotice('Фирменият профил е запазен.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleSubmit(event) {
@@ -143,6 +256,7 @@ function App() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/documents/extract`, {
         method: 'POST',
+        headers: authHeaders(),
         body: formData,
       });
 
@@ -173,9 +287,9 @@ function App() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/documents/${result.id}/review`, {
         method: 'PUT',
-        headers: {
+        headers: authHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         body: JSON.stringify({ data: draft }),
       });
 
@@ -195,13 +309,32 @@ function App() {
     }
   }
 
-  function downloadExport(type) {
+  async function downloadExport(type) {
     if (!result?.id) {
       setError('Първо извлечи документ.');
       return;
     }
 
-    window.location.href = `${API_BASE_URL}/api/documents/${result.id}/export/${type}?t=${Date.now()}`;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/documents/${result.id}/export/${type}`, {
+        headers: authHeaders(),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data?.error?.message || 'Експортът не беше успешен.');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = type === 'excel' ? 'ocr-export.xlsx' : 'ocr-export.pdf';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   }
 
   const extracted = draft;
@@ -219,140 +352,207 @@ function App() {
         </div>
       </section>
 
-      <section className="mvp-flow">
-        <span>1. Качване</span>
-        <span>2. OCR извличане</span>
-        <span>3. Преглед и корекция</span>
-        <span className="muted">4. Excel/PDF експорт</span>
-      </section>
+      {!auth ? (
+        <section className="auth-panel">
+          <div className="auth-tabs">
+            <button type="button" className={authMode === 'login' ? '' : 'secondary-button'} onClick={() => setAuthMode('login')}>
+              Вход
+            </button>
+            <button type="button" className={authMode === 'register' ? '' : 'secondary-button'} onClick={() => setAuthMode('register')}>
+              Регистрация
+            </button>
+          </div>
 
-      <section className="workspace">
-        <form className="upload-panel" onSubmit={handleSubmit}>
-          <label htmlFor="document">Документ</label>
-          <input
-            id="document"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={(event) => setFile(event.target.files?.[0] || null)}
-          />
-
-          {file && (
-            <div className="file-meta">
-              <strong>{file.name}</strong>
-              <span>{Math.round(file.size / 1024)} KB</span>
-            </div>
-          )}
-
-          <button type="submit" disabled={loading}>
-            {loading ? 'Извличане...' : 'Извлечи данни'}
-          </button>
-
-          <button
-            type="button"
-            disabled={!result?.id}
-            className="secondary-button"
-            onClick={() => downloadExport('excel')}
-          >
-            Експорт Excel
-          </button>
-
-          <button
-            type="button"
-            disabled={!result?.id}
-            className="secondary-button"
-            onClick={() => downloadExport('pdf')}
-          >
-            Експорт PDF
-          </button>
+          <form className="edit-form" onSubmit={handleAuthSubmit}>
+            {authMode === 'register' && (
+              <>
+                <label className="field">
+                  <span>Име</span>
+                  <input value={authForm.name} onChange={(event) => setAuthForm({ ...authForm, name: event.target.value })} />
+                </label>
+                <label className="field">
+                  <span>Фирма</span>
+                  <input value={authForm.company_name} onChange={(event) => setAuthForm({ ...authForm, company_name: event.target.value })} />
+                </label>
+              </>
+            )}
+            <label className="field">
+              <span>Имейл</span>
+              <input type="email" value={authForm.email} onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })} />
+            </label>
+            <label className="field">
+              <span>Парола</span>
+              <input type="password" value={authForm.password} onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })} />
+            </label>
+            <button type="submit" disabled={loading}>
+              {authMode === 'register' ? 'Създай акаунт' : 'Влез'}
+            </button>
+          </form>
 
           {error && <p className="error">{error}</p>}
           {notice && <p className="notice">{notice}</p>}
-        </form>
+        </section>
+      ) : (
+        <>
+          <section className="account-bar">
+            <div>
+              <strong>{auth.company?.name}</strong>
+              <span>{auth.user?.email} · роля: {auth.membership?.role}</span>
+            </div>
+            <button type="button" className="secondary-button" onClick={logout}>
+              Изход
+            </button>
+          </section>
 
-        <section className="result-panel">
-          <h2>Преглед на данните</h2>
-          {extracted ? (
-            <>
-              <div className="summary-grid">
-                <div>
-                  <span>Тип</span>
-                  <strong>{documentTypeLabels[extracted.document_type] || extracted.document_type || '-'}</strong>
-                </div>
-                <div>
-                  <span>Номер</span>
-                  <strong>{extracted.document_number || '-'}</strong>
-                </div>
-                <div>
-                  <span>Дата</span>
-                  <strong>{extracted.issue_date || '-'}</strong>
-                </div>
-                <div>
-                  <span>Общо</span>
-                  <strong>
-                    {extracted.amounts?.total_with_vat ?? '-'} {extracted.currency || ''}
-                  </strong>
-                </div>
-              </div>
+          <section className="company-panel">
+            <h2>Фирмен профил</h2>
+            <div className="edit-form">
+              <label className="field">
+                <span>Име на фирма</span>
+                <input value={companyDraft?.name || ''} onChange={(event) => updateCompanyDraft('name', event.target.value)} />
+              </label>
+              <label className="field">
+                <span>ЕИК</span>
+                <input value={companyDraft?.tax_id || ''} onChange={(event) => updateCompanyDraft('tax_id', event.target.value)} />
+              </label>
+              <label className="field">
+                <span>ДДС номер</span>
+                <input value={companyDraft?.vat_id || ''} onChange={(event) => updateCompanyDraft('vat_id', event.target.value)} />
+              </label>
+              <label className="field">
+                <span>Адрес</span>
+                <input value={companyDraft?.address || ''} onChange={(event) => updateCompanyDraft('address', event.target.value)} />
+              </label>
+              <label className="field">
+                <span>План</span>
+                <select value={companyDraft?.plan || 'free'} onChange={(event) => updateCompanyDraft('plan', event.target.value)}>
+                  <option value="free">Free · 50 документа</option>
+                  <option value="starter">Starter · 200 документа</option>
+                  <option value="pro">Pro · 1000 документа</option>
+                  <option value="business">Business · 5000 документа</option>
+                </select>
+              </label>
+              <label className="field">
+                <span>Месечен лимит</span>
+                <input disabled value={companyDraft?.document_limit || ''} />
+              </label>
+            </div>
+            <div className="actions">
+              <button type="button" onClick={handleCompanySave} disabled={saving || auth.membership?.role !== 'owner'}>
+                Запази фирмения профил
+              </button>
+            </div>
+          </section>
 
-              {extracted.needs_review && (
-                <div className="review-box">
-                  За преглед: {(extracted.review_reasons || [])
-                    .map((reason) => reviewReasonLabels[reason] || reason)
-                    .join(', ') || 'липсват или има несигурни полета'}
+          <section className="mvp-flow">
+            <span>1. Качване</span>
+            <span>2. OCR извличане</span>
+            <span>3. Преглед и корекция</span>
+            <span className="muted">4. Excel/PDF експорт</span>
+          </section>
+
+          <section className="workspace">
+            <form className="upload-panel" onSubmit={handleSubmit}>
+              <label htmlFor="document">Документ</label>
+              <input
+                id="document"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => setFile(event.target.files?.[0] || null)}
+              />
+
+              {file && (
+                <div className="file-meta">
+                  <strong>{file.name}</strong>
+                  <span>{Math.round(file.size / 1024)} KB</span>
                 </div>
               )}
 
-              <div className="edit-form">
-                <SelectField
-                  label="Тип документ"
-                  path="document_type"
-                  draft={draft}
-                  onChange={updateDraft}
-                  options={['invoice', 'receipt', 'credit_note', 'other']}
-                  labels={documentTypeLabels}
-                />
-                <Field label="Номер" path="document_number" draft={draft} onChange={updateDraft} />
-                <Field label="Дата" path="issue_date" type="date" draft={draft} onChange={updateDraft} />
-                <Field label="Валута" path="currency" draft={draft} onChange={updateDraft} />
+              <button type="submit" disabled={loading}>
+                {loading ? 'Извличане...' : 'Извлечи данни'}
+              </button>
 
-                <Field label="Доставчик" path="supplier.name" draft={draft} onChange={updateDraft} />
-                <Field label="ЕИК доставчик" path="supplier.tax_id" draft={draft} onChange={updateDraft} />
-                <Field label="ДДС номер доставчик" path="supplier.vat_id" draft={draft} onChange={updateDraft} />
-                <Field label="Получател" path="recipient.name" draft={draft} onChange={updateDraft} />
+              <button type="button" disabled={!result?.id} className="secondary-button" onClick={() => downloadExport('excel')}>
+                Експорт Excel
+              </button>
 
-                <Field label="Сума без ДДС" path="amounts.subtotal_without_vat" type="number" draft={draft} onChange={updateDraft} />
-                <Field label="ДДС" path="amounts.total_vat" type="number" draft={draft} onChange={updateDraft} />
-                <Field label="Обща сума" path="amounts.total_with_vat" type="number" draft={draft} onChange={updateDraft} />
-                <Field label="ДДС ставка" path="vat.rate" type="number" draft={draft} onChange={updateDraft} />
+              <button type="button" disabled={!result?.id} className="secondary-button" onClick={() => downloadExport('pdf')}>
+                Експорт PDF
+              </button>
 
-                <SelectField
-                  label="Плащане"
-                  path="payment.method"
-                  draft={draft}
-                  onChange={updateDraft}
-                  options={['cash', 'card', 'bank_transfer', 'online', 'mixed', 'unknown']}
-                  labels={paymentMethodLabels}
-                />
-                <Field label="IBAN" path="payment.iban" draft={draft} onChange={updateDraft} />
-                <Field label="Банка" path="payment.bank_name" draft={draft} onChange={updateDraft} />
-              </div>
+              {error && <p className="error">{error}</p>}
+              {notice && <p className="notice">{notice}</p>}
+            </form>
 
-              <div className="actions">
-                <button type="button" onClick={handleSaveReview} disabled={saving}>
-                  {saving ? 'Запазване...' : 'Запази корекциите'}
-                </button>
-              </div>
+            <section className="result-panel">
+              <h2>Преглед на данните</h2>
+              {extracted ? (
+                <>
+                  <div className="summary-grid">
+                    <div>
+                      <span>Тип</span>
+                      <strong>{documentTypeLabels[extracted.document_type] || extracted.document_type || '-'}</strong>
+                    </div>
+                    <div>
+                      <span>Номер</span>
+                      <strong>{extracted.document_number || '-'}</strong>
+                    </div>
+                    <div>
+                      <span>Дата</span>
+                      <strong>{extracted.issue_date || '-'}</strong>
+                    </div>
+                    <div>
+                      <span>Общо</span>
+                      <strong>
+                        {extracted.amounts?.total_with_vat ?? '-'} {extracted.currency || ''}
+                      </strong>
+                    </div>
+                  </div>
 
-              <details>
-                <summary>JSON резултат</summary>
-                <pre>{JSON.stringify(result, null, 2)}</pre>
-              </details>
-            </>
-          ) : (
-            <p className="empty">Качи JPG, PNG или WEBP фактура/касова бележка, за да започнеш.</p>
-          )}
-        </section>
-      </section>
+                  {extracted.needs_review && (
+                    <div className="review-box">
+                      За преглед: {(extracted.review_reasons || [])
+                        .map((reason) => reviewReasonLabels[reason] || reason)
+                        .join(', ') || 'липсват или има несигурни полета'}
+                    </div>
+                  )}
+
+                  <div className="edit-form">
+                    <SelectField label="Тип документ" path="document_type" draft={draft} onChange={updateDraft} options={['invoice', 'receipt', 'credit_note', 'other']} labels={documentTypeLabels} />
+                    <Field label="Номер" path="document_number" draft={draft} onChange={updateDraft} />
+                    <Field label="Дата" path="issue_date" type="date" draft={draft} onChange={updateDraft} />
+                    <Field label="Валута" path="currency" draft={draft} onChange={updateDraft} />
+                    <Field label="Доставчик" path="supplier.name" draft={draft} onChange={updateDraft} />
+                    <Field label="ЕИК доставчик" path="supplier.tax_id" draft={draft} onChange={updateDraft} />
+                    <Field label="ДДС номер доставчик" path="supplier.vat_id" draft={draft} onChange={updateDraft} />
+                    <Field label="Получател" path="recipient.name" draft={draft} onChange={updateDraft} />
+                    <Field label="Сума без ДДС" path="amounts.subtotal_without_vat" type="number" draft={draft} onChange={updateDraft} />
+                    <Field label="ДДС" path="amounts.total_vat" type="number" draft={draft} onChange={updateDraft} />
+                    <Field label="Обща сума" path="amounts.total_with_vat" type="number" draft={draft} onChange={updateDraft} />
+                    <Field label="ДДС ставка" path="vat.rate" type="number" draft={draft} onChange={updateDraft} />
+                    <SelectField label="Плащане" path="payment.method" draft={draft} onChange={updateDraft} options={['cash', 'card', 'bank_transfer', 'online', 'mixed', 'unknown']} labels={paymentMethodLabels} />
+                    <Field label="IBAN" path="payment.iban" draft={draft} onChange={updateDraft} />
+                    <Field label="Банка" path="payment.bank_name" draft={draft} onChange={updateDraft} />
+                  </div>
+
+                  <div className="actions">
+                    <button type="button" onClick={handleSaveReview} disabled={saving}>
+                      {saving ? 'Запазване...' : 'Запази корекциите'}
+                    </button>
+                  </div>
+
+                  <details>
+                    <summary>JSON резултат</summary>
+                    <pre>{JSON.stringify(result, null, 2)}</pre>
+                  </details>
+                </>
+              ) : (
+                <p className="empty">Качи JPG, PNG или WEBP фактура/касова бележка, за да започнеш.</p>
+              )}
+            </section>
+          </section>
+        </>
+      )}
     </main>
   );
 }

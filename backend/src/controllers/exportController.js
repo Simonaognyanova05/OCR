@@ -11,7 +11,7 @@ function sendExport(res, exportFile) {
 
 async function exportExcelHandler(req, res, next) {
   try {
-    const exportFile = await generateExcelExport(req.params.id);
+    const exportFile = await generateExcelExport(req.params.id, req.auth.company._id);
     sendExport(res, exportFile);
   } catch (error) {
     next(error);
@@ -20,7 +20,7 @@ async function exportExcelHandler(req, res, next) {
 
 async function exportPdfHandler(req, res, next) {
   try {
-    const exportFile = await generatePdfExport(req.params.id);
+    const exportFile = await generatePdfExport(req.params.id, req.auth.company._id);
     sendExport(res, exportFile);
   } catch (error) {
     next(error);

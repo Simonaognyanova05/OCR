@@ -1,4 +1,3 @@
-const { HttpError } = require("../utils/httpError");
 const {
   extractDocument,
   getDocument,
@@ -7,7 +6,7 @@ const {
 
 async function extractDocumentHandler(req, res, next) {
   try {
-    const payload = await extractDocument(req.file);
+    const payload = await extractDocument(req.file, req.auth);
     res.status(201).json(payload);
   } catch (error) {
     next(error);
@@ -16,28 +15,18 @@ async function extractDocumentHandler(req, res, next) {
 
 async function getDocumentHandler(req, res, next) {
   try {
-    const result = await getDocument(req.params.id);
+    const result = await getDocument(req.params.id, req.auth);
     res.json(result);
   } catch (error) {
-    if (error.code === "ENOENT") {
-      next(new HttpError(404, "Document result not found."));
-      return;
-    }
-
     next(error);
   }
 }
 
 async function saveReviewHandler(req, res, next) {
   try {
-    const updated = await saveReviewedDocument(req.params.id, req.body?.data);
+    const updated = await saveReviewedDocument(req.params.id, req.body?.data, req.auth);
     res.json(updated);
   } catch (error) {
-    if (error.code === "ENOENT") {
-      next(new HttpError(404, "Document result not found."));
-      return;
-    }
-
     next(error);
   }
 }
@@ -47,4 +36,3 @@ module.exports = {
   getDocumentHandler,
   saveReviewHandler,
 };
-
