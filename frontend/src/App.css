@@ -103,6 +103,17 @@
   flex: 0 0 auto;
 }
 
+.upload-panel.drag-active {
+  border-color: #1d4ed8;
+  background: #f8fbff;
+}
+
+.drop-hint {
+  margin: -4px 0 0;
+  color: #52627a;
+  font-size: 14px;
+}
+
 .result-panel {
   flex: 1;
   min-width: 0;

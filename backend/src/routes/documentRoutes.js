@@ -2,7 +2,8 @@ const express = require("express");
 const {
   extractDocumentHandler,
   getDocumentHandler,
-  saveReviewHandler
+  saveReviewHandler,
+  uploadDocumentHandler
 } = require("../controllers/documentController");
 const {
   exportExcelHandler,
@@ -13,6 +14,7 @@ const { requireAuth, requireRole } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+router.post("/documents/upload", requireAuth, uploadDocument.single("document"), uploadDocumentHandler);
 router.post("/documents/extract", requireAuth, uploadDocument.single("document"), extractDocumentHandler);
 router.put("/documents/:id/review", requireAuth, requireRole(["owner", "accountant", "employee"]), saveReviewHandler);
 router.get("/documents/:id/export/excel", requireAuth, requireRole(["owner", "accountant"]), exportExcelHandler);

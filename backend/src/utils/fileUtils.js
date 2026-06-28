@@ -27,5 +27,5 @@ async function imageToDataUrl(filePath) {
 
 module.exports = {
   getImageMimeType,
-  imageToDataUrl,
+  imageToDataUrl
 };

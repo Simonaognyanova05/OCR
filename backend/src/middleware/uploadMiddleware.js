@@ -4,8 +4,10 @@ const multer = require("multer");
 const { config } = require("../config/env");
 const { HttpError } = require("../utils/httpError");
 
-const allowedMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+const allowedMimeTypes = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
+const ocrMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 const extensionByMimeType = {
+  "application/pdf": ".pdf",
   "image/png": ".png",
   "image/jpeg": ".jpg",
   "image/webp": ".webp"
@@ -27,7 +29,7 @@ const uploadDocument = multer({
   },
   fileFilter(_req, file, callback) {
     if (!allowedMimeTypes.has(file.mimetype)) {
-      callback(new HttpError(400, "Неподдържан файлов тип. Качи PNG, JPG, JPEG или WEBP."));
+      callback(new HttpError(400, "Неподдържан файлов тип. Качи PDF, JPG или PNG."));
       return;
     }
 
@@ -36,5 +38,6 @@ const uploadDocument = multer({
 });
 
 module.exports = {
-  uploadDocument,
+  ocrMimeTypes,
+  uploadDocument
 };

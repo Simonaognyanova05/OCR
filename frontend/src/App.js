@@ -119,6 +119,7 @@ function App() {
   });
   const [companyDraft, setCompanyDraft] = useState(null);
   const [file, setFile] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
   const [result, setResult] = useState(null);
   const [draft, setDraft] = useState(null);
   const [error, setError] = useState('');
@@ -273,6 +274,53 @@ function App() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleUploadOnly() {
+    if (!file) {
+      setError('Избери PDF, JPG или PNG документ.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('document', file);
+
+    setLoading(true);
+    setError('');
+    setNotice('');
+    setResult(null);
+    setDraft(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/documents/upload`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error?.message || 'Качването не беше успешно.');
+      }
+
+      setResult(data);
+      setNotice('Документът е качен със статус uploaded.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleDragOver(event) {
+    event.preventDefault();
+    setDragActive(true);
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    setDragActive(false);
+    setFile(event.dataTransfer.files?.[0] || null);
   }
 
   async function handleSaveReview() {
@@ -452,12 +500,19 @@ function App() {
           </section>
 
           <section className="workspace">
-            <form className="upload-panel" onSubmit={handleSubmit}>
+            <form
+              className={dragActive ? 'upload-panel drag-active' : 'upload-panel'}
+              onSubmit={handleSubmit}
+              onDragOver={handleDragOver}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleDrop}
+            >
               <label htmlFor="document">Документ</label>
+              <p className="drop-hint">Пусни файл тук или избери от телефона/компютъра.</p>
               <input
                 id="document"
                 type="file"
-                accept="image/png,image/jpeg,image/webp"
+                accept="application/pdf,image/png,image/jpeg"
                 onChange={(event) => setFile(event.target.files?.[0] || null)}
               />
 
@@ -470,6 +525,10 @@ function App() {
 
               <button type="submit" disabled={loading}>
                 {loading ? 'Извличане...' : 'Извлечи данни'}
+              </button>
+
+              <button type="button" disabled={loading || !file} className="secondary-button" onClick={handleUploadOnly}>
+                Само качи
               </button>
 
               <button type="button" disabled={!result?.id} className="secondary-button" onClick={() => downloadExport('excel')}>

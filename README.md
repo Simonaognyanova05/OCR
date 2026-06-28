@@ -76,6 +76,46 @@ business  5000 документа / месец
 
 Документите вече се записват към конкретна фирма и потребител. OCR, прегледът и експортите изискват `Authorization: Bearer <token>`.
 
+## Модул 2: Качване На Документи
+
+Поддържани файлове:
+
+- PDF
+- JPG/JPEG
+- PNG
+
+Frontend-ът поддържа стандартен mobile upload през file input и drag & drop на desktop. Има два сценария:
+
+- `Само качи` записва файла със статус `uploaded`
+- `Извлечи данни` качва файла и стартира OCR обработка за PDF/JPG/PNG
+
+PDF файловете се конвертират до PNG изображения чрез Python + PyMuPDF преди да се изпратят към AI. Конверторът използва PDF rotation metadata и в `auto` режим завърта landscape страници към portrait, което покрива най-честия случай при сканирани фактури. Prompt-ът към AI също указва, че изображенията може да са завъртени.
+
+При upload се записва документ с основните полета:
+
+```text
+Document {
+  companyId,
+  uploadedBy,
+  originalFileName,
+  fileUrl,
+  status: "uploaded",
+  documentType: null,
+  createdAt
+}
+```
+
+Статуси:
+
+```text
+uploaded
+processing
+needs_review
+approved
+exported
+failed
+```
+
 ## Настройка
 
 1. Инсталирай backend зависимостите:
@@ -111,6 +151,9 @@ OPENAI_FALLBACK_MODEL=gpt-5.5
 MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/ocr-documents
 PDF_FONT_REGULAR_PATH=C:\Windows\Fonts\arial.ttf
 PDF_FONT_BOLD_PATH=C:\Windows\Fonts\arialbd.ttf
+PYTHON_COMMAND=py
+PDF_RENDER_DPI=200
+PDF_MAX_PAGES=5
 ```
 
 ## Стартиране
@@ -174,6 +217,16 @@ GET  http://localhost:3000/api/company
 PUT  http://localhost:3000/api/company
 GET  http://localhost:3000/api/company/memberships
 POST http://localhost:3000/api/company/memberships
+```
+
+Само качване на документ:
+
+```powershell
+Invoke-RestMethod `
+  -Uri http://localhost:3000/api/documents/upload `
+  -Method Post `
+  -Headers @{ Authorization = "Bearer <token>" } `
+  -Form @{ document = Get-Item .\samples\invoice.pdf }
 ```
 
 Извличане на документ:

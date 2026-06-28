@@ -1,14 +1,31 @@
 const path = require("node:path");
 const { config } = require("../config/env");
 const { HttpError } = require("../utils/httpError");
-const { extractExpenseDocument } = require("./ocrService");
+const { ocrMimeTypes } = require("../middleware/uploadMiddleware");
+const { convertPdfToImages } = require("./pdfConversionService");
+const { extractExpenseDocumentFromImages } = require("./ocrService");
 const { applyReviewRules } = require("./reviewService");
 const {
   countCompanyDocumentsThisMonth,
-  createDocument,
+  createUploadedDocument,
   findDocumentById,
+  updateDocumentStatus,
+  updateExtractedDocument,
   updateReviewedDocument
 } = require("./documentRepository");
+
+function buildFilePayload(file, authContext) {
+  const storedFile = path.basename(file.path);
+
+  return {
+    company_id: authContext.company._id,
+    uploaded_by: authContext.user._id,
+    original_file_name: file.originalname,
+    stored_file: storedFile,
+    file_url: `/uploads/${storedFile}`,
+    mime_type: file.mimetype
+  };
+}
 
 async function assertDocumentLimit(authContext) {
   const usedDocuments = await countCompanyDocumentsThisMonth(authContext.company._id);
@@ -19,6 +36,28 @@ async function assertDocumentLimit(authContext) {
   }
 }
 
+async function uploadDocumentOnly(file, authContext) {
+  if (!file) {
+    throw new HttpError(400, "Липсва файл. Изпрати multipart/form-data с поле document.");
+  }
+
+  await assertDocumentLimit(authContext);
+
+  return createUploadedDocument(buildFilePayload(file, authContext));
+}
+
+async function getOcrImagePaths(file) {
+  if (file.mimetype === "application/pdf") {
+    return convertPdfToImages(file.path);
+  }
+
+  if (ocrMimeTypes.has(file.mimetype)) {
+    return [file.path];
+  }
+
+  throw new HttpError(400, "OCR обработката поддържа PDF, JPG и PNG.");
+}
+
 async function extractDocument(file, authContext) {
   if (!file) {
     throw new HttpError(400, "Липсва файл. Изпрати multipart/form-data с поле document.");
@@ -26,20 +65,23 @@ async function extractDocument(file, authContext) {
 
   await assertDocumentLimit(authContext);
 
-  const extracted = applyReviewRules(await extractExpenseDocument(file.path));
+  const uploadedDocument = await createUploadedDocument(buildFilePayload(file, authContext));
 
-  const payload = {
-    company_id: authContext.company._id,
-    uploaded_by: authContext.user._id,
-    original_name: file.originalname,
-    stored_file: path.basename(file.path),
-    model: config.model,
-    status: extracted.needs_review ? "needs_review" : "ready_for_export",
-    extracted_at: new Date().toISOString(),
-    data: extracted
-  };
+  try {
+    await updateDocumentStatus(uploadedDocument.id, authContext.company._id, "processing");
+    const imagePaths = await getOcrImagePaths(file);
+    const extracted = applyReviewRules(await extractExpenseDocumentFromImages(imagePaths));
 
-  return createDocument(payload);
+    return updateExtractedDocument(uploadedDocument.id, authContext.company._id, {
+      model: config.model,
+      status: extracted.needs_review ? "needs_review" : "approved",
+      extracted_at: new Date().toISOString(),
+      data: extracted
+    });
+  } catch (error) {
+    await updateDocumentStatus(uploadedDocument.id, authContext.company._id, "failed").catch(() => {});
+    throw error;
+  }
 }
 
 async function getDocument(documentId, authContext) {
@@ -59,5 +101,6 @@ async function saveReviewedDocument(documentId, data, authContext) {
 module.exports = {
   extractDocument,
   getDocument,
-  saveReviewedDocument
+  saveReviewedDocument,
+  uploadDocumentOnly
 };

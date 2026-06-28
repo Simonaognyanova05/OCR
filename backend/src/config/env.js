@@ -18,6 +18,9 @@ const config = {
   outputDir: path.resolve(backendDir, process.env.OUTPUT_DIR || "outputs"),
   pdfFontRegularPath: process.env.PDF_FONT_REGULAR_PATH,
   pdfFontBoldPath: process.env.PDF_FONT_BOLD_PATH,
+  pythonCommand: process.env.PYTHON_COMMAND || "py",
+  pdfRenderDpi: Number(process.env.PDF_RENDER_DPI || 200),
+  pdfMaxPages: Number(process.env.PDF_MAX_PAGES || 5),
 };
 
 function assertConfig() {

@@ -1,8 +1,18 @@
 const {
   extractDocument,
   getDocument,
-  saveReviewedDocument
+  saveReviewedDocument,
+  uploadDocumentOnly
 } = require("../services/documentService");
+
+async function uploadDocumentHandler(req, res, next) {
+  try {
+    const payload = await uploadDocumentOnly(req.file, req.auth);
+    res.status(201).json(payload);
+  } catch (error) {
+    next(error);
+  }
+}
 
 async function extractDocumentHandler(req, res, next) {
   try {
@@ -35,4 +45,5 @@ module.exports = {
   extractDocumentHandler,
   getDocumentHandler,
   saveReviewHandler,
+  uploadDocumentHandler
 };

@@ -13,11 +13,28 @@ function normalizeResponse(response) {
   return JSON.parse(text);
 }
 
-async function extractExpenseDocument(filePath) {
+async function buildImageInputs(imagePaths) {
+  const images = [];
+
+  for (const imagePath of imagePaths) {
+    images.push({
+      type: "input_image",
+      image_url: await imageToDataUrl(imagePath)
+    });
+  }
+
+  return images;
+}
+
+async function extractExpenseDocumentFromImages(imagePaths) {
   assertConfig();
 
+  if (!imagePaths.length) {
+    throw new Error("Няма изображения за OCR обработка.");
+  }
+
   const client = new OpenAI({ apiKey: config.apiKey });
-  const imageUrl = await imageToDataUrl(filePath);
+  const imageInputs = await buildImageInputs(imagePaths);
 
   const response = await client.responses.create({
     model: config.model,
@@ -33,6 +50,8 @@ async function extractExpenseDocument(filePath) {
               "Основните потребители са малки фирми, счетоводители, самонаети лица и онлайн магазини.",
               "Фокусирай се върху номер на документ, дата, доставчик, получател, ДДС, суми, валута и начин на плащане.",
               "Всички текстови полета, които ще вижда потребителят, трябва да бъдат на български език.",
+              "Възможно е изображенията да са завъртени. Прочети документа според реалната ориентация на текста.",
+              "Ако има няколко страници, извлечи един общ документ от всички подадени изображения.",
               "За редовете попълвай description_bg с чисто българско име на продукт/услуга само когато текстът е ясно четим.",
               "За редовете попълвай description_raw с оригиналния видим текст само когато е ясно четим.",
               "Никога не копирай OCR шум, mojibake, случайни символи или транслитериран боклук в description_bg или description_raw.",
@@ -54,12 +73,9 @@ async function extractExpenseDocument(filePath) {
         content: [
           {
             type: "input_text",
-            text: "Извлечи счетоводно готови данни от това изображение на фактура или касова бележка."
+            text: "Извлечи счетоводно готови данни от тези изображения на фактура или касова бележка."
           },
-          {
-            type: "input_image",
-            image_url: imageUrl
-          }
+          ...imageInputs
         ]
       }
     ],
@@ -76,6 +92,11 @@ async function extractExpenseDocument(filePath) {
   return normalizeResponse(response);
 }
 
+async function extractExpenseDocument(filePath) {
+  return extractExpenseDocumentFromImages([filePath]);
+}
+
 module.exports = {
   extractExpenseDocument,
+  extractExpenseDocumentFromImages
 };

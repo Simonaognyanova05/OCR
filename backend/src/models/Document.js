@@ -7,6 +7,11 @@ const documentSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    originalFileName: {
+      type: String,
+      trim: true,
+      default: null
+    },
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
@@ -21,24 +26,35 @@ const documentSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-    model: {
+    fileUrl: {
       type: String,
       required: true
+    },
+    mimeType: {
+      type: String,
+      required: true
+    },
+    model: {
+      type: String,
+      default: null
     },
     status: {
       type: String,
-      enum: ["needs_review", "ready_for_export", "reviewed", "exported"],
+      enum: ["uploaded", "processing", "needs_review", "approved", "exported", "failed"],
       required: true,
-      default: "needs_review"
+      default: "uploaded"
+    },
+    documentType: {
+      type: String,
+      default: null
     },
     data: {
       type: mongoose.Schema.Types.Mixed,
-      required: true
+      default: null
     },
     extractedAt: {
       type: Date,
-      required: true,
-      default: Date.now
+      default: null
     },
     reviewedAt: {
       type: Date,

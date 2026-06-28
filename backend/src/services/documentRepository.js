@@ -8,9 +8,13 @@ function toApiDocument(document) {
     company_id: document.companyId.toString(),
     uploaded_by: document.uploadedBy.toString(),
     original_name: document.originalName,
+    original_file_name: document.originalFileName || document.originalName,
     stored_file: document.storedFile,
+    file_url: document.fileUrl,
+    mime_type: document.mimeType,
     model: document.model,
     status: document.status,
+    document_type: document.documentType,
     extracted_at: document.extractedAt?.toISOString(),
     reviewed_at: document.reviewedAt ? document.reviewedAt.toISOString() : undefined,
     created_at: document.createdAt?.toISOString(),
@@ -19,15 +23,40 @@ function toApiDocument(document) {
   };
 }
 
+function buildFileUrl(storedFile) {
+  return `/uploads/${storedFile}`;
+}
+
+async function createUploadedDocument(payload) {
+  const document = await Document.create({
+    companyId: payload.company_id,
+    uploadedBy: payload.uploaded_by,
+    originalName: payload.original_file_name,
+    originalFileName: payload.original_file_name,
+    storedFile: payload.stored_file,
+    fileUrl: payload.file_url || buildFileUrl(payload.stored_file),
+    mimeType: payload.mime_type,
+    status: "uploaded",
+    documentType: null,
+    data: null
+  });
+
+  return toApiDocument(document);
+}
+
 async function createDocument(payload) {
   const sanitizedData = sanitizeDocumentDataForStorage(payload.data);
   const document = await Document.create({
     companyId: payload.company_id,
     uploadedBy: payload.uploaded_by,
     originalName: payload.original_name,
+    originalFileName: payload.original_name,
     storedFile: payload.stored_file,
+    fileUrl: payload.file_url || buildFileUrl(payload.stored_file),
+    mimeType: payload.mime_type,
     model: payload.model,
     status: payload.status,
+    documentType: sanitizedData.document_type || null,
     extractedAt: payload.extracted_at,
     data: sanitizedData
   });
@@ -66,6 +95,60 @@ async function findDocumentById(documentId, companyId) {
   return toApiDocument(document);
 }
 
+async function updateDocumentStatus(documentId, companyId, status, extraUpdates = {}) {
+  const document = await Document.findOneAndUpdate(
+    {
+      _id: documentId,
+      companyId
+    },
+    {
+      $set: {
+        status,
+        ...extraUpdates
+      }
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+
+  if (!document) {
+    throw new HttpError(404, "Документът не е намерен.");
+  }
+
+  return toApiDocument(document);
+}
+
+async function updateExtractedDocument(documentId, companyId, payload) {
+  const sanitizedData = sanitizeDocumentDataForStorage(payload.data);
+  const document = await Document.findOneAndUpdate(
+    {
+      _id: documentId,
+      companyId
+    },
+    {
+      $set: {
+        status: payload.status,
+        model: payload.model,
+        documentType: sanitizedData.document_type || null,
+        extractedAt: payload.extracted_at,
+        data: sanitizedData
+      }
+    },
+    {
+      new: true,
+      runValidators: true
+    }
+  );
+
+  if (!document) {
+    throw new HttpError(404, "Документът не е намерен.");
+  }
+
+  return toApiDocument(document);
+}
+
 async function updateReviewedDocument(documentId, reviewedData, companyId) {
   const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
   const document = await Document.findOneAndUpdate(
@@ -75,8 +158,9 @@ async function updateReviewedDocument(documentId, reviewedData, companyId) {
     },
     {
       $set: {
-        status: sanitizedData.needs_review ? "needs_review" : "reviewed",
+        status: sanitizedData.needs_review ? "needs_review" : "approved",
         reviewedAt: new Date(),
+        documentType: sanitizedData.document_type || null,
         data: sanitizedData
       }
     },
@@ -127,7 +211,10 @@ async function markDocumentExported(documentId, exportType, companyId) {
 module.exports = {
   countCompanyDocumentsThisMonth,
   createDocument,
+  createUploadedDocument,
   findDocumentById,
   markDocumentExported,
+  updateDocumentStatus,
+  updateExtractedDocument,
   updateReviewedDocument
 };
