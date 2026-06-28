@@ -56,7 +56,7 @@ async function createDocument(payload) {
     mimeType: payload.mime_type,
     model: payload.model,
     status: payload.status,
-    documentType: sanitizedData.document_type || null,
+    documentType: sanitizedData.documentType || sanitizedData.document_type || null,
     extractedAt: payload.extracted_at,
     data: sanitizedData
   });
@@ -131,7 +131,7 @@ async function updateExtractedDocument(documentId, companyId, payload) {
       $set: {
         status: payload.status,
         model: payload.model,
-        documentType: sanitizedData.document_type || null,
+        documentType: sanitizedData.documentType || sanitizedData.document_type || null,
         extractedAt: payload.extracted_at,
         data: sanitizedData
       }
@@ -158,9 +158,9 @@ async function updateReviewedDocument(documentId, reviewedData, companyId) {
     },
     {
       $set: {
-        status: sanitizedData.needs_review ? "needs_review" : "approved",
+        status: sanitizedData.needsReview ? "needs_review" : "approved",
         reviewedAt: new Date(),
-        documentType: sanitizedData.document_type || null,
+        documentType: sanitizedData.documentType || sanitizedData.document_type || null,
         data: sanitizedData
       }
     },

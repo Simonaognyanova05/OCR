@@ -22,16 +22,12 @@ const reviewReasonLabels = {
 const documentTypeLabels = {
   invoice: 'Фактура',
   receipt: 'Касова бележка',
-  credit_note: 'Кредитно известие',
-  other: 'Друг документ',
 };
 
 const paymentMethodLabels = {
   cash: 'В брой',
   card: 'Карта',
   bank_transfer: 'Банков превод',
-  online: 'Онлайн',
-  mixed: 'Смесено',
   unknown: 'Неизвестно',
 };
 
@@ -550,48 +546,47 @@ function App() {
                   <div className="summary-grid">
                     <div>
                       <span>Тип</span>
-                      <strong>{documentTypeLabels[extracted.document_type] || extracted.document_type || '-'}</strong>
+                      <strong>{documentTypeLabels[extracted.documentType] || extracted.documentType || '-'}</strong>
                     </div>
                     <div>
                       <span>Номер</span>
-                      <strong>{extracted.document_number || '-'}</strong>
+                      <strong>{extracted.documentNumber || '-'}</strong>
                     </div>
                     <div>
                       <span>Дата</span>
-                      <strong>{extracted.issue_date || '-'}</strong>
+                      <strong>{extracted.issueDate || '-'}</strong>
                     </div>
                     <div>
                       <span>Общо</span>
                       <strong>
-                        {extracted.amounts?.total_with_vat ?? '-'} {extracted.currency || ''}
+                        {extracted.totalAmount ?? '-'} {extracted.currency || ''}
                       </strong>
                     </div>
                   </div>
 
-                  {extracted.needs_review && (
+                  {extracted.needsReview && (
                     <div className="review-box">
-                      За преглед: {(extracted.review_reasons || [])
+                      За преглед: {(extracted.reviewReasons || [])
                         .map((reason) => reviewReasonLabels[reason] || reason)
                         .join(', ') || 'липсват или има несигурни полета'}
                     </div>
                   )}
 
                   <div className="edit-form">
-                    <SelectField label="Тип документ" path="document_type" draft={draft} onChange={updateDraft} options={['invoice', 'receipt', 'credit_note', 'other']} labels={documentTypeLabels} />
-                    <Field label="Номер" path="document_number" draft={draft} onChange={updateDraft} />
-                    <Field label="Дата" path="issue_date" type="date" draft={draft} onChange={updateDraft} />
+                    <SelectField label="Тип документ" path="documentType" draft={draft} onChange={updateDraft} options={['invoice', 'receipt']} labels={documentTypeLabels} />
+                    <Field label="Номер" path="documentNumber" draft={draft} onChange={updateDraft} />
+                    <Field label="Дата" path="issueDate" type="date" draft={draft} onChange={updateDraft} />
                     <Field label="Валута" path="currency" draft={draft} onChange={updateDraft} />
-                    <Field label="Доставчик" path="supplier.name" draft={draft} onChange={updateDraft} />
-                    <Field label="ЕИК доставчик" path="supplier.tax_id" draft={draft} onChange={updateDraft} />
-                    <Field label="ДДС номер доставчик" path="supplier.vat_id" draft={draft} onChange={updateDraft} />
-                    <Field label="Получател" path="recipient.name" draft={draft} onChange={updateDraft} />
-                    <Field label="Сума без ДДС" path="amounts.subtotal_without_vat" type="number" draft={draft} onChange={updateDraft} />
-                    <Field label="ДДС" path="amounts.total_vat" type="number" draft={draft} onChange={updateDraft} />
-                    <Field label="Обща сума" path="amounts.total_with_vat" type="number" draft={draft} onChange={updateDraft} />
-                    <Field label="ДДС ставка" path="vat.rate" type="number" draft={draft} onChange={updateDraft} />
-                    <SelectField label="Плащане" path="payment.method" draft={draft} onChange={updateDraft} options={['cash', 'card', 'bank_transfer', 'online', 'mixed', 'unknown']} labels={paymentMethodLabels} />
-                    <Field label="IBAN" path="payment.iban" draft={draft} onChange={updateDraft} />
-                    <Field label="Банка" path="payment.bank_name" draft={draft} onChange={updateDraft} />
+                    <Field label="Доставчик" path="supplierName" draft={draft} onChange={updateDraft} />
+                    <Field label="ДДС номер доставчик" path="supplierVatNumber" draft={draft} onChange={updateDraft} />
+                    <Field label="Получател" path="recipientName" draft={draft} onChange={updateDraft} />
+                    <Field label="ДДС номер получател" path="recipientVatNumber" draft={draft} onChange={updateDraft} />
+                    <Field label="Сума без ДДС" path="netAmount" type="number" draft={draft} onChange={updateDraft} />
+                    <Field label="ДДС" path="vatAmount" type="number" draft={draft} onChange={updateDraft} />
+                    <Field label="Обща сума" path="totalAmount" type="number" draft={draft} onChange={updateDraft} />
+                    <Field label="Категория" path="category" draft={draft} onChange={updateDraft} />
+                    <SelectField label="Плащане" path="paymentMethod" draft={draft} onChange={updateDraft} options={['cash', 'card', 'bank_transfer', 'unknown']} labels={paymentMethodLabels} />
+                    <Field label="Увереност" path="confidence" type="number" draft={draft} onChange={updateDraft} />
                   </div>
 
                   <div className="actions">

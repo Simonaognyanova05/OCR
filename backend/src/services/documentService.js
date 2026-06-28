@@ -74,7 +74,7 @@ async function extractDocument(file, authContext) {
 
     return updateExtractedDocument(uploadedDocument.id, authContext.company._id, {
       model: config.model,
-      status: extracted.needs_review ? "needs_review" : "approved",
+      status: extracted.needsReview ? "needs_review" : "approved",
       extracted_at: new Date().toISOString(),
       data: extracted
     });

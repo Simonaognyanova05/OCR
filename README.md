@@ -116,6 +116,50 @@ exported
 failed
 ```
 
+## Модул 3: OCR + AI Извличане
+
+Pipeline:
+
+```text
+Upload
+-> OCR / Vision model
+-> AI extraction
+-> JSON validation чрез strict schema
+-> Save extracted data
+-> Needs review или approved
+```
+
+AI извлича и записва:
+
+```json
+{
+  "documentType": "invoice | receipt",
+  "documentNumber": "string | null",
+  "issueDate": "string | null",
+  "supplierName": "string | null",
+  "supplierVatNumber": "string | null",
+  "recipientName": "string | null",
+  "recipientVatNumber": "string | null",
+  "totalAmount": "number | null",
+  "vatAmount": "number | null",
+  "netAmount": "number | null",
+  "currency": "BGN | EUR | USD | null",
+  "paymentMethod": "cash | card | bank_transfer | unknown",
+  "category": "string | null",
+  "items": [
+    {
+      "name": "string",
+      "quantity": "number | null",
+      "unitPrice": "number | null",
+      "totalPrice": "number | null"
+    }
+  ],
+  "confidence": "number"
+}
+```
+
+Backend-ът добавя `needsReview` и `reviewReasons` след валидацията. Ако липсват важни полета или `confidence < 0.75`, документът остава със статус `needs_review`.
+
 ## Настройка
 
 1. Инсталирай backend зависимостите:

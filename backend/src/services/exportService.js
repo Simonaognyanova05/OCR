@@ -22,7 +22,6 @@ const boldFontCandidates = [
 const documentTypeLabels = {
   invoice: "Фактура",
   receipt: "Касова бележка",
-  credit_note: "Кредитно известие",
   other: "Друг документ"
 };
 
@@ -30,8 +29,6 @@ const paymentMethodLabels = {
   cash: "В брой",
   card: "Карта",
   bank_transfer: "Банков превод",
-  online: "Онлайн",
-  mixed: "Смесено",
   unknown: "Неизвестно"
 };
 
@@ -41,17 +38,20 @@ const reviewReasonLabels = {
   supplier_name_missing: "Липсва доставчик",
   recipient_name_missing: "Липсва получател",
   currency_missing: "Липсва валута",
-  subtotal_missing: "Липсва сума без ДДС",
   total_missing: "Липсва крайна сума",
   vat_missing: "Липсва ДДС информация",
   payment_method_missing: "Липсва начин на плащане",
-  amount_mismatch: "Има несъответствие в сумите",
   low_confidence: "Ниска увереност при разчитане",
   unclear_image: "Изображението не е достатъчно ясно"
 };
 
 function valueOrEmpty(value) {
   return value === null || value === undefined ? "" : cleanDisplayText(value);
+}
+
+function getDataValue(data, newPath, fallbackPath) {
+  const get = (path) => path.split(".").reduce((current, key) => current?.[key], data);
+  return get(newPath) ?? (fallbackPath ? get(fallbackPath) : undefined);
 }
 
 function findExistingFont(candidates) {
@@ -62,13 +62,8 @@ function registerPdfFonts(pdf) {
   const regularFont = findExistingFont(regularFontCandidates);
   const boldFont = findExistingFont(boldFontCandidates);
 
-  if (regularFont) {
-    pdf.registerFont("AppRegular", regularFont);
-  }
-
-  if (boldFont) {
-    pdf.registerFont("AppBold", boldFont);
-  }
+  if (regularFont) pdf.registerFont("AppRegular", regularFont);
+  if (boldFont) pdf.registerFont("AppBold", boldFont);
 
   return {
     regular: regularFont ? "AppRegular" : "Helvetica",
@@ -77,7 +72,7 @@ function registerPdfFonts(pdf) {
 }
 
 function buildFileBaseName(document) {
-  const number = document.data?.document_number || document.id;
+  const number = document.data?.documentNumber || document.data?.document_number || document.id;
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   return `document-${String(number).replace(/[^a-zA-Z0-9_-]+/g, "-")}-${timestamp}`;
 }
@@ -94,34 +89,40 @@ function getReviewReasonLabel(reason) {
   return reviewReasonLabels[reason] || reason;
 }
 
+function getItems(data) {
+  if (Array.isArray(data.items)) {
+    return data.items;
+  }
+
+  return (data.line_items || []).map((item) => ({
+    name: item.description_bg ?? item.description ?? item.description_raw ?? "",
+    quantity: item.quantity,
+    unitPrice: item.unit_price_without_vat,
+    totalPrice: item.total_with_vat
+  }));
+}
+
 function getSummaryRows(document) {
   const data = document.data || {};
 
   return [
-    ["Тип документ", getDocumentTypeLabel(data.document_type)],
-    ["Номер на документ", data.document_number],
-    ["Дата на издаване", data.issue_date],
-    ["Доставчик", data.supplier?.name],
-    ["ЕИК доставчик", data.supplier?.tax_id],
-    ["ДДС номер доставчик", data.supplier?.vat_id],
-    ["Получател", data.recipient?.name],
-    ["ЕИК получател", data.recipient?.tax_id],
+    ["Тип документ", getDocumentTypeLabel(getDataValue(data, "documentType", "document_type"))],
+    ["Номер на документ", getDataValue(data, "documentNumber", "document_number")],
+    ["Дата на издаване", getDataValue(data, "issueDate", "issue_date")],
+    ["Доставчик", getDataValue(data, "supplierName", "supplier.name")],
+    ["ДДС номер доставчик", getDataValue(data, "supplierVatNumber", "supplier.vat_id")],
+    ["Получател", getDataValue(data, "recipientName", "recipient.name")],
+    ["ДДС номер получател", getDataValue(data, "recipientVatNumber", "recipient.vat_id")],
+    ["Категория", data.category],
     ["Валута", data.currency],
-    ["Сума без ДДС", data.amounts?.subtotal_without_vat],
-    ["Отстъпка", data.amounts?.discount],
-    ["ДДС", data.amounts?.total_vat ?? data.vat?.amount],
-    ["Обща сума с ДДС", data.amounts?.total_with_vat],
-    ["ДДС ставка", data.vat?.rate],
-    ["Начин на плащане", getPaymentMethodLabel(data.payment?.method)],
-    ["IBAN", data.payment?.iban],
-    ["Банка", data.payment?.bank_name],
-    ["Нуждае се от преглед", data.needs_review ? "Да" : "Не"],
-    ["Причини за преглед", (data.review_reasons || []).map(getReviewReasonLabel).join(", ")]
+    ["Сума без ДДС", getDataValue(data, "netAmount", "amounts.subtotal_without_vat")],
+    ["ДДС", getDataValue(data, "vatAmount", "amounts.total_vat") ?? data.vat?.amount],
+    ["Обща сума", getDataValue(data, "totalAmount", "amounts.total_with_vat")],
+    ["Начин на плащане", getPaymentMethodLabel(getDataValue(data, "paymentMethod", "payment.method"))],
+    ["Увереност", data.confidence],
+    ["Нуждае се от преглед", data.needsReview || data.needs_review ? "Да" : "Не"],
+    ["Причини за преглед", (data.reviewReasons || data.review_reasons || []).map(getReviewReasonLabel).join(", ")]
   ];
-}
-
-function getLineItemDescription(item) {
-  return item.description_bg ?? item.description ?? item.description_raw;
 }
 
 function ensurePdfSpace(pdf, neededHeight) {
@@ -136,20 +137,15 @@ function drawSummaryRow(pdf, fonts, label, value) {
   const labelWidth = 145;
   const valueWidth = pdf.page.width - pdf.page.margins.left - pdf.page.margins.right - labelWidth;
   const text = String(valueOrEmpty(value));
-  const labelHeight = pdf.heightOfString(label, { width: labelWidth });
-  const valueHeight = pdf.heightOfString(text || "-", { width: valueWidth });
-  const rowHeight = Math.max(labelHeight, valueHeight, 16) + 5;
+  const rowHeight = Math.max(
+    pdf.heightOfString(label, { width: labelWidth }),
+    pdf.heightOfString(text || "-", { width: valueWidth }),
+    16
+  ) + 5;
 
   ensurePdfSpace(pdf, rowHeight);
-
-  pdf.font(fonts.bold).fontSize(9).text(label, startX, startY, {
-    width: labelWidth,
-    continued: false
-  });
-  pdf.font(fonts.regular).fontSize(9).text(text || "-", startX + labelWidth, startY, {
-    width: valueWidth,
-    continued: false
-  });
+  pdf.font(fonts.bold).fontSize(9).text(label, startX, startY, { width: labelWidth });
+  pdf.font(fonts.regular).fontSize(9).text(text || "-", startX + labelWidth, startY, { width: valueWidth });
   pdf.y = startY + rowHeight;
 }
 
@@ -157,28 +153,22 @@ function drawLineItem(pdf, fonts, item, index) {
   const startX = pdf.page.margins.left;
   const descriptionWidth = 245;
   const metaWidth = pdf.page.width - pdf.page.margins.left - pdf.page.margins.right - descriptionWidth;
-  const description = `${index + 1}. ${valueOrEmpty(getLineItemDescription(item)) || "-"}`;
+  const description = `${index + 1}. ${valueOrEmpty(item.name) || "-"}`;
   const meta = [
     `Кол.: ${valueOrEmpty(item.quantity) || "-"}`,
-    `Ед. цена: ${valueOrEmpty(item.unit_price_without_vat) || "-"}`,
-    `ДДС: ${valueOrEmpty(item.vat_rate) || "-"}`,
-    `Общо: ${valueOrEmpty(item.total_with_vat) || "-"}`
+    `Ед. цена: ${valueOrEmpty(item.unitPrice) || "-"}`,
+    `Общо: ${valueOrEmpty(item.totalPrice) || "-"}`
   ].join(" | ");
-  const descriptionHeight = pdf.heightOfString(description, { width: descriptionWidth });
-  const metaHeight = pdf.heightOfString(meta, { width: metaWidth });
-  const rowHeight = Math.max(descriptionHeight, metaHeight, 18) + 8;
+  const rowHeight = Math.max(
+    pdf.heightOfString(description, { width: descriptionWidth }),
+    pdf.heightOfString(meta, { width: metaWidth }),
+    18
+  ) + 8;
   const startY = pdf.y;
 
   ensurePdfSpace(pdf, rowHeight);
-
-  pdf.font(fonts.bold).fontSize(9).text(description, startX, startY, {
-    width: descriptionWidth,
-    continued: false
-  });
-  pdf.font(fonts.regular).fontSize(9).text(meta, startX + descriptionWidth, startY, {
-    width: metaWidth,
-    continued: false
-  });
+  pdf.font(fonts.bold).fontSize(9).text(description, startX, startY, { width: descriptionWidth });
+  pdf.font(fonts.regular).fontSize(9).text(meta, startX + descriptionWidth, startY, { width: metaWidth });
   pdf.moveTo(startX, startY + rowHeight - 3)
     .lineTo(pdf.page.width - pdf.page.margins.right, startY + rowHeight - 3)
     .strokeColor("#dddddd")
@@ -202,24 +192,19 @@ async function generateExcelExport(documentId, companyId) {
   }
 
   summarySheet.getRow(1).font = { bold: true };
-
   itemsSheet.columns = [
-    { header: "Описание", key: "description", width: 42 },
+    { header: "Име", key: "name", width: 42 },
     { header: "Количество", key: "quantity", width: 14 },
-    { header: "Ед. цена без ДДС", key: "unit_price_without_vat", width: 22 },
-    { header: "ДДС ставка", key: "vat_rate", width: 14 },
-    { header: "Сума без ДДС", key: "total_without_vat", width: 20 },
-    { header: "Сума с ДДС", key: "total_with_vat", width: 18 }
+    { header: "Ед. цена", key: "unitPrice", width: 18 },
+    { header: "Общо", key: "totalPrice", width: 18 }
   ];
 
-  for (const item of document.data?.line_items || []) {
+  for (const item of getItems(document.data || {})) {
     itemsSheet.addRow({
-      description: valueOrEmpty(getLineItemDescription(item)),
+      name: valueOrEmpty(item.name),
       quantity: valueOrEmpty(item.quantity),
-      unit_price_without_vat: valueOrEmpty(item.unit_price_without_vat),
-      vat_rate: valueOrEmpty(item.vat_rate),
-      total_without_vat: valueOrEmpty(item.total_without_vat),
-      total_with_vat: valueOrEmpty(item.total_with_vat)
+      unitPrice: valueOrEmpty(item.unitPrice),
+      totalPrice: valueOrEmpty(item.totalPrice)
     });
   }
 
@@ -258,13 +243,11 @@ function generatePdfBuffer(document) {
     pdf.font(fonts.bold).fontSize(13).text("Редове / артикули");
     pdf.moveDown(0.5);
 
-    const items = document.data?.line_items || [];
+    const items = getItems(document.data || {});
     if (items.length === 0) {
       pdf.font(fonts.regular).fontSize(10).text("Няма извлечени редове.");
     } else {
-      items.forEach((item, index) => {
-        drawLineItem(pdf, fonts, item, index);
-      });
+      items.forEach((item, index) => drawLineItem(pdf, fonts, item, index));
     }
 
     pdf.end();

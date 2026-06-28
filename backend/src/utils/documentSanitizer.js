@@ -15,33 +15,20 @@ function sanitizeTextTree(value) {
 }
 
 function sanitizeDocumentDataForStorage(documentData) {
-  const sanitized = sanitizeTextTree(documentData);
+  const sanitized = sanitizeTextTree(documentData || {});
 
   return {
     ...sanitized,
-    supplier: sanitizeParty(sanitized.supplier),
-    recipient: sanitizeParty(sanitized.recipient),
-    line_items: (sanitized.line_items || []).map((item) => ({
+    supplierName: sanitizeTextForStorage(sanitized.supplierName, { nullIfGarbled: true }),
+    recipientName: sanitizeTextForStorage(sanitized.recipientName, { nullIfGarbled: true }),
+    category: sanitizeTextForStorage(sanitized.category, { nullIfGarbled: true }),
+    items: (sanitized.items || []).map((item) => ({
       ...item,
-      description: sanitizeTextForStorage(item.description, { nullIfGarbled: true }),
-      description_bg: sanitizeTextForStorage(item.description_bg, { nullIfGarbled: true }),
-      description_raw: sanitizeTextForStorage(item.description_raw, { nullIfGarbled: true })
+      name: sanitizeTextForStorage(item.name, { nullIfGarbled: true }) || ""
     }))
   };
 }
 
-function sanitizeParty(party) {
-  if (!party) {
-    return party;
-  }
-
-  return {
-    ...party,
-    name: sanitizeTextForStorage(party.name, { nullIfGarbled: true }),
-    address: sanitizeTextForStorage(party.address, { nullIfGarbled: true })
-  };
-}
-
 module.exports = {
-  sanitizeDocumentDataForStorage,
+  sanitizeDocumentDataForStorage
 };
