@@ -23,8 +23,59 @@ function toApiDocument(document) {
   };
 }
 
+function toApiDocumentListItem(document) {
+  const data = document.data || {};
+
+  return {
+    id: document._id.toString(),
+    date: data.issueDate || document.createdAt?.toISOString()?.slice(0, 10) || null,
+    documentType: document.documentType || data.documentType || null,
+    supplierName: data.supplierName || null,
+    recipientName: data.recipientName || null,
+    totalAmount: data.totalAmount ?? null,
+    vatAmount: data.vatAmount ?? null,
+    currency: data.currency || null,
+    category: data.category || null,
+    status: document.status,
+    createdAt: document.createdAt?.toISOString(),
+    updatedAt: document.updatedAt?.toISOString()
+  };
+}
+
 function buildFileUrl(storedFile) {
   return `/uploads/${storedFile}`;
+}
+
+function addRegexFilter(query, field, value) {
+  if (value) {
+    query[field] = { $regex: String(value).trim(), $options: "i" };
+  }
+}
+
+function buildDocumentListQuery(companyId, filters = {}) {
+  const query = { companyId };
+
+  if (filters.status) query.status = filters.status;
+  if (filters.documentType) query.documentType = filters.documentType;
+  if (filters.currency) query["data.currency"] = filters.currency;
+  if (filters.category) query["data.category"] = { $regex: String(filters.category).trim(), $options: "i" };
+
+  addRegexFilter(query, "data.supplierName", filters.supplier);
+  addRegexFilter(query, "data.recipientName", filters.recipient);
+
+  if (filters.dateFrom || filters.dateTo) {
+    query["data.issueDate"] = {};
+    if (filters.dateFrom) query["data.issueDate"].$gte = filters.dateFrom;
+    if (filters.dateTo) query["data.issueDate"].$lte = filters.dateTo;
+  }
+
+  if (filters.amountMin || filters.amountMax) {
+    query["data.totalAmount"] = {};
+    if (filters.amountMin) query["data.totalAmount"].$gte = Number(filters.amountMin);
+    if (filters.amountMax) query["data.totalAmount"].$lte = Number(filters.amountMax);
+  }
+
+  return query;
 }
 
 async function createUploadedDocument(payload) {
@@ -51,10 +102,31 @@ async function countCompanyDocumentsThisMonth(companyId) {
 
   return Document.countDocuments({
     companyId,
-    createdAt: {
-      $gte: startOfMonth
-    }
+    createdAt: { $gte: startOfMonth }
   });
+}
+
+async function listCompanyDocuments(companyId, filters) {
+  const limit = Math.min(Number(filters.limit || 50), 100);
+  const page = Math.max(Number(filters.page || 1), 1);
+  const query = buildDocumentListQuery(companyId, filters);
+  const [documents, total] = await Promise.all([
+    Document.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Document.countDocuments(query)
+  ]);
+
+  return {
+    documents: documents.map(toApiDocumentListItem),
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  };
 }
 
 async function findDocumentById(documentId, companyId) {
@@ -182,6 +254,7 @@ module.exports = {
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
   findDocumentById,
+  listCompanyDocuments,
   markDocumentExported,
   updateDocumentStatus,
   updateExtractedDocument,

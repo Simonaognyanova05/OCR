@@ -82,7 +82,13 @@ const documentSchema = new mongoose.Schema(
 
 documentSchema.index({ status: 1, createdAt: -1 });
 documentSchema.index({ companyId: 1, createdAt: -1 });
-documentSchema.index({ "data.document_number": 1 });
-documentSchema.index({ "data.supplier.name": 1 });
+documentSchema.index({ "data.documentNumber": 1 });
+documentSchema.index({ "data.issueDate": 1 });
+documentSchema.index({ "data.supplierName": 1 });
+documentSchema.index({ "data.recipientName": 1 });
+documentSchema.index({ "data.totalAmount": 1 });
+documentSchema.index({ "data.currency": 1 });
+documentSchema.index({ "data.category": 1 });
+documentSchema.index({ documentType: 1 });
 
 module.exports = mongoose.model("Document", documentSchema);

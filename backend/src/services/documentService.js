@@ -10,6 +10,7 @@ const {
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
   findDocumentById,
+  listCompanyDocuments,
   updateDocumentStatus,
   updateExtractedDocument,
   updateReviewedDocument
@@ -86,6 +87,10 @@ async function getDocument(documentId, authContext) {
   return findDocumentById(documentId, authContext.company._id);
 }
 
+async function listDocuments(filters, authContext) {
+  return listCompanyDocuments(authContext.company._id, filters || {});
+}
+
 async function saveReviewedDocument(documentId, data, authContext) {
   if (!data) {
     throw new HttpError(400, "Липсват прегледани данни за документа.");
@@ -107,6 +112,7 @@ module.exports = {
   approveDocument,
   extractDocument,
   getDocument,
+  listDocuments,
   saveReviewedDocument,
   uploadDocumentOnly
 };

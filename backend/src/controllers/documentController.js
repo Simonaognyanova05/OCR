@@ -2,6 +2,7 @@ const {
   approveDocument,
   extractDocument,
   getDocument,
+  listDocuments,
   saveReviewedDocument,
   uploadDocumentOnly
 } = require("../services/documentService");
@@ -33,6 +34,15 @@ async function getDocumentHandler(req, res, next) {
   }
 }
 
+async function listDocumentsHandler(req, res, next) {
+  try {
+    const result = await listDocuments(req.query, req.auth);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function saveReviewHandler(req, res, next) {
   try {
     const updated = await saveReviewedDocument(req.params.id, req.body?.data, req.auth);
@@ -55,6 +65,7 @@ module.exports = {
   approveDocumentHandler,
   extractDocumentHandler,
   getDocumentHandler,
+  listDocumentsHandler,
   saveReviewHandler,
   uploadDocumentHandler
 };

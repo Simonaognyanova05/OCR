@@ -136,6 +136,19 @@ function App() {
   const [dragActive, setDragActive] = useState(false);
   const [result, setResult] = useState(null);
   const [draft, setDraft] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [documentFilters, setDocumentFilters] = useState({
+    dateFrom: '',
+    dateTo: '',
+    supplier: '',
+    recipient: '',
+    amountMin: '',
+    amountMax: '',
+    currency: '',
+    category: '',
+    status: '',
+    documentType: '',
+  });
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
@@ -151,6 +164,11 @@ function App() {
   useEffect(() => {
     if (auth?.company) setCompanyDraft(auth.company);
   }, [auth]);
+
+  useEffect(() => {
+    if (auth?.token) loadDocuments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth?.token]);
 
   function authHeaders(extraHeaders = {}) {
     return { ...extraHeaders, Authorization: `Bearer ${auth.token}` };
@@ -177,6 +195,47 @@ function App() {
 
   function updateCompanyDraft(path, value) {
     setCompanyDraft((currentDraft) => ({ ...currentDraft, [path]: value }));
+  }
+
+  function buildQuery(params) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== '' && value !== null && value !== undefined) query.set(key, value);
+    });
+    return query.toString();
+  }
+
+  async function loadDocuments(filters = documentFilters) {
+    if (!auth?.token) return;
+
+    setError('');
+    try {
+      const query = buildQuery(filters);
+      const response = await fetch(`${API_BASE_URL}/api/documents${query ? `?${query}` : ''}`, {
+        headers: authHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error?.message || 'Списъкът с документи не беше зареден.');
+      setDocuments(data.documents || []);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
+  async function openDocument(documentId) {
+    setError('');
+    setNotice('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}`, {
+        headers: authHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error?.message || 'Документът не беше зареден.');
+      setResult(data);
+      setDraft(data.data);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   }
 
   async function handleAuthSubmit(event) {
@@ -255,6 +314,7 @@ function App() {
       setResult(data);
       setDraft(data.data);
       setNotice('Данните са извлечени. Прегледай и одобри документа.');
+      loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -287,6 +347,7 @@ function App() {
 
       setResult(data);
       setNotice('Документът е качен със статус uploaded.');
+      loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -323,6 +384,7 @@ function App() {
       setResult(data);
       setDraft(data.data);
       setNotice('Корекциите са запазени. Документът все още чака одобрение.');
+      loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -348,6 +410,7 @@ function App() {
       setResult(data);
       setDraft(data.data);
       setNotice('Документът е одобрен.');
+      loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -377,6 +440,7 @@ function App() {
       link.download = type === 'excel' ? 'ocr-export.xlsx' : 'ocr-export.pdf';
       link.click();
       window.URL.revokeObjectURL(url);
+      loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -453,6 +517,67 @@ function App() {
             <span>2. OCR / AI извличане</span>
             <span>3. Преглед</span>
             <span className="muted">4. Approve document</span>
+          </section>
+
+          <section className="documents-panel">
+            <div className="panel-heading">
+              <h2>Списък с документи</h2>
+              <button type="button" className="secondary-button" onClick={() => loadDocuments()}>
+                Обнови
+              </button>
+            </div>
+            <div className="filters-grid">
+              <label className="field"><span>От дата</span><input type="date" value={documentFilters.dateFrom} onChange={(event) => setDocumentFilters({ ...documentFilters, dateFrom: event.target.value })} /></label>
+              <label className="field"><span>До дата</span><input type="date" value={documentFilters.dateTo} onChange={(event) => setDocumentFilters({ ...documentFilters, dateTo: event.target.value })} /></label>
+              <label className="field"><span>Доставчик</span><input value={documentFilters.supplier} onChange={(event) => setDocumentFilters({ ...documentFilters, supplier: event.target.value })} /></label>
+              <label className="field"><span>Получател</span><input value={documentFilters.recipient} onChange={(event) => setDocumentFilters({ ...documentFilters, recipient: event.target.value })} /></label>
+              <label className="field"><span>Сума от</span><input type="number" value={documentFilters.amountMin} onChange={(event) => setDocumentFilters({ ...documentFilters, amountMin: event.target.value })} /></label>
+              <label className="field"><span>Сума до</span><input type="number" value={documentFilters.amountMax} onChange={(event) => setDocumentFilters({ ...documentFilters, amountMax: event.target.value })} /></label>
+              <label className="field"><span>Валута</span><select value={documentFilters.currency} onChange={(event) => setDocumentFilters({ ...documentFilters, currency: event.target.value })}><option value="">Всички</option><option value="BGN">BGN</option><option value="EUR">EUR</option><option value="USD">USD</option></select></label>
+              <label className="field"><span>Категория</span><input value={documentFilters.category} onChange={(event) => setDocumentFilters({ ...documentFilters, category: event.target.value })} /></label>
+              <label className="field"><span>Статус</span><select value={documentFilters.status} onChange={(event) => setDocumentFilters({ ...documentFilters, status: event.target.value })}><option value="">Всички</option><option value="uploaded">uploaded</option><option value="processing">processing</option><option value="needs_review">needs_review</option><option value="approved">approved</option><option value="exported">exported</option><option value="failed">failed</option></select></label>
+              <label className="field"><span>Тип документ</span><select value={documentFilters.documentType} onChange={(event) => setDocumentFilters({ ...documentFilters, documentType: event.target.value })}><option value="">Всички</option><option value="invoice">Фактура</option><option value="receipt">Касова бележка</option></select></label>
+            </div>
+            <div className="actions">
+              <button type="button" className="secondary-button" onClick={() => { const cleared = { dateFrom: '', dateTo: '', supplier: '', recipient: '', amountMin: '', amountMax: '', currency: '', category: '', status: '', documentType: '' }; setDocumentFilters(cleared); loadDocuments(cleared); }}>
+                Изчисти филтрите
+              </button>
+              <button type="button" onClick={() => loadDocuments()}>
+                Филтрирай
+              </button>
+            </div>
+            <div className="table-wrap">
+              <table className="documents-table">
+                <thead>
+                  <tr>
+                    <th>Дата</th>
+                    <th>Тип</th>
+                    <th>Доставчик</th>
+                    <th>Получател</th>
+                    <th>Сума</th>
+                    <th>ДДС</th>
+                    <th>Статус</th>
+                    <th>Категория</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.length === 0 ? (
+                    <tr><td colSpan="8" className="empty-cell">Няма документи по тези филтри.</td></tr>
+                  ) : documents.map((document) => (
+                    <tr key={document.id} onClick={() => openDocument(document.id)}>
+                      <td>{document.date || '-'}</td>
+                      <td>{documentTypeLabels[document.documentType] || document.documentType || '-'}</td>
+                      <td>{document.supplierName || '-'}</td>
+                      <td>{document.recipientName || '-'}</td>
+                      <td>{document.totalAmount ?? '-'} {document.currency || ''}</td>
+                      <td>{document.vatAmount ?? '-'}</td>
+                      <td>{document.status}</td>
+                      <td>{document.category || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section className="workspace">

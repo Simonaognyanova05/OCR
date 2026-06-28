@@ -195,6 +195,39 @@ POST /api/documents/<document-id>/approve
 
 Едва тогава статусът става `approved`.
 
+## Модул 5: Списък С Документи
+
+Добавен е списък с документи за текущата фирма:
+
+```text
+GET /api/documents
+```
+
+Таблицата показва:
+
+```text
+Дата | Тип | Доставчик | Получател | Сума | ДДС | Статус | Категория
+```
+
+Поддържани филтри:
+
+- период: `dateFrom`, `dateTo`
+- доставчик: `supplier`
+- получател: `recipient`
+- сума: `amountMin`, `amountMax`
+- валута: `currency`
+- категория: `category`
+- статус: `status`
+- тип документ: `documentType`
+
+Пример:
+
+```text
+GET /api/documents?dateFrom=2026-01-01&dateTo=2026-01-31&status=approved&currency=BGN
+```
+
+Във frontend-а ред от таблицата може да се отвори директно в review екрана.
+
 ## Настройка
 
 1. Инсталирай backend зависимостите:
