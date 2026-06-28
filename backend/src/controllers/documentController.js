@@ -1,4 +1,5 @@
 const {
+  approveDocument,
   extractDocument,
   getDocument,
   saveReviewedDocument,
@@ -41,7 +42,17 @@ async function saveReviewHandler(req, res, next) {
   }
 }
 
+async function approveDocumentHandler(req, res, next) {
+  try {
+    const approved = await approveDocument(req.params.id, req.body?.data, req.auth);
+    res.json(approved);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
+  approveDocumentHandler,
   extractDocumentHandler,
   getDocumentHandler,
   saveReviewHandler,

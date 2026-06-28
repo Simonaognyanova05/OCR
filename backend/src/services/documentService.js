@@ -6,6 +6,7 @@ const { convertPdfToImages } = require("./pdfConversionService");
 const { extractExpenseDocumentFromImages } = require("./ocrService");
 const { applyReviewRules } = require("./reviewService");
 const {
+  approveReviewedDocument,
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
   findDocumentById,
@@ -42,7 +43,6 @@ async function uploadDocumentOnly(file, authContext) {
   }
 
   await assertDocumentLimit(authContext);
-
   return createUploadedDocument(buildFilePayload(file, authContext));
 }
 
@@ -64,7 +64,6 @@ async function extractDocument(file, authContext) {
   }
 
   await assertDocumentLimit(authContext);
-
   const uploadedDocument = await createUploadedDocument(buildFilePayload(file, authContext));
 
   try {
@@ -74,7 +73,6 @@ async function extractDocument(file, authContext) {
 
     return updateExtractedDocument(uploadedDocument.id, authContext.company._id, {
       model: config.model,
-      status: extracted.needsReview ? "needs_review" : "approved",
       extracted_at: new Date().toISOString(),
       data: extracted
     });
@@ -94,11 +92,19 @@ async function saveReviewedDocument(documentId, data, authContext) {
   }
 
   const reviewedData = applyReviewRules(data);
-
   return updateReviewedDocument(documentId, reviewedData, authContext.company._id);
 }
 
+async function approveDocument(documentId, data, authContext) {
+  if (!data) {
+    throw new HttpError(400, "Липсват данни за одобряване.");
+  }
+
+  return approveReviewedDocument(documentId, data, authContext.company._id);
+}
+
 module.exports = {
+  approveDocument,
   extractDocument,
   getDocument,
   saveReviewedDocument,

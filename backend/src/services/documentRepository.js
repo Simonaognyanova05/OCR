@@ -44,26 +44,6 @@ async function createUploadedDocument(payload) {
   return toApiDocument(document);
 }
 
-async function createDocument(payload) {
-  const sanitizedData = sanitizeDocumentDataForStorage(payload.data);
-  const document = await Document.create({
-    companyId: payload.company_id,
-    uploadedBy: payload.uploaded_by,
-    originalName: payload.original_name,
-    originalFileName: payload.original_name,
-    storedFile: payload.stored_file,
-    fileUrl: payload.file_url || buildFileUrl(payload.stored_file),
-    mimeType: payload.mime_type,
-    model: payload.model,
-    status: payload.status,
-    documentType: sanitizedData.documentType || sanitizedData.document_type || null,
-    extractedAt: payload.extracted_at,
-    data: sanitizedData
-  });
-
-  return toApiDocument(document);
-}
-
 async function countCompanyDocumentsThisMonth(companyId) {
   const startOfMonth = new Date();
   startOfMonth.setUTCDate(1);
@@ -78,16 +58,10 @@ async function countCompanyDocumentsThisMonth(companyId) {
 }
 
 async function findDocumentById(documentId, companyId) {
-  const query = {
-    _id: documentId
-  };
-
-  if (companyId) {
-    query.companyId = companyId;
-  }
+  const query = { _id: documentId };
+  if (companyId) query.companyId = companyId;
 
   const document = await Document.findOne(query);
-
   if (!document) {
     throw new HttpError(404, "Документът не е намерен.");
   }
@@ -97,20 +71,9 @@ async function findDocumentById(documentId, companyId) {
 
 async function updateDocumentStatus(documentId, companyId, status, extraUpdates = {}) {
   const document = await Document.findOneAndUpdate(
-    {
-      _id: documentId,
-      companyId
-    },
-    {
-      $set: {
-        status,
-        ...extraUpdates
-      }
-    },
-    {
-      new: true,
-      runValidators: true
-    }
+    { _id: documentId, companyId },
+    { $set: { status, ...extraUpdates } },
+    { new: true, runValidators: true }
   );
 
   if (!document) {
@@ -123,23 +86,17 @@ async function updateDocumentStatus(documentId, companyId, status, extraUpdates 
 async function updateExtractedDocument(documentId, companyId, payload) {
   const sanitizedData = sanitizeDocumentDataForStorage(payload.data);
   const document = await Document.findOneAndUpdate(
-    {
-      _id: documentId,
-      companyId
-    },
+    { _id: documentId, companyId },
     {
       $set: {
-        status: payload.status,
+        status: "needs_review",
         model: payload.model,
-        documentType: sanitizedData.documentType || sanitizedData.document_type || null,
+        documentType: sanitizedData.documentType || null,
         extractedAt: payload.extracted_at,
         data: sanitizedData
       }
     },
-    {
-      new: true,
-      runValidators: true
-    }
+    { new: true, runValidators: true }
   );
 
   if (!document) {
@@ -152,22 +109,42 @@ async function updateExtractedDocument(documentId, companyId, payload) {
 async function updateReviewedDocument(documentId, reviewedData, companyId) {
   const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
   const document = await Document.findOneAndUpdate(
-    {
-      _id: documentId,
-      companyId
-    },
+    { _id: documentId, companyId },
     {
       $set: {
-        status: sanitizedData.needsReview ? "needs_review" : "approved",
+        status: "needs_review",
         reviewedAt: new Date(),
-        documentType: sanitizedData.documentType || sanitizedData.document_type || null,
+        documentType: sanitizedData.documentType || null,
         data: sanitizedData
       }
     },
+    { new: true, runValidators: true }
+  );
+
+  if (!document) {
+    throw new HttpError(404, "Документът не е намерен.");
+  }
+
+  return toApiDocument(document);
+}
+
+async function approveReviewedDocument(documentId, reviewedData, companyId) {
+  const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
+  const document = await Document.findOneAndUpdate(
+    { _id: documentId, companyId },
     {
-      new: true,
-      runValidators: true
-    }
+      $set: {
+        status: "approved",
+        reviewedAt: new Date(),
+        documentType: sanitizedData.documentType || null,
+        data: {
+          ...sanitizedData,
+          needsReview: false,
+          reviewReasons: []
+        }
+      }
+    },
+    { new: true, runValidators: true }
   );
 
   if (!document) {
@@ -179,13 +156,8 @@ async function updateReviewedDocument(documentId, reviewedData, companyId) {
 
 async function markDocumentExported(documentId, exportType, companyId) {
   const exportedAt = new Date();
-  const query = {
-    _id: documentId
-  };
-
-  if (companyId) {
-    query.companyId = companyId;
-  }
+  const query = { _id: documentId };
+  if (companyId) query.companyId = companyId;
 
   const document = await Document.findOneAndUpdate(
     query,
@@ -195,10 +167,7 @@ async function markDocumentExported(documentId, exportType, companyId) {
         [`exports.${exportType}.exportedAt`]: exportedAt
       }
     },
-    {
-      new: true,
-      runValidators: true
-    }
+    { new: true, runValidators: true }
   );
 
   if (!document) {
@@ -209,8 +178,8 @@ async function markDocumentExported(documentId, exportType, companyId) {
 }
 
 module.exports = {
+  approveReviewedDocument,
   countCompanyDocumentsThisMonth,
-  createDocument,
   createUploadedDocument,
   findDocumentById,
   markDocumentExported,
