@@ -90,5 +90,11 @@ documentSchema.index({ "data.totalAmount": 1 });
 documentSchema.index({ "data.currency": 1 });
 documentSchema.index({ "data.category": 1 });
 documentSchema.index({ documentType: 1 });
+documentSchema.index({
+  companyId: 1,
+  "data.documentNumber": 1,
+  "data.supplierName": 1,
+  "data.totalAmount": 1
+});
 
 module.exports = mongoose.model("Document", documentSchema);

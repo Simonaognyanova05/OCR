@@ -4,12 +4,13 @@ const { HttpError } = require("../utils/httpError");
 const { ocrMimeTypes } = require("../middleware/uploadMiddleware");
 const { convertPdfToImages } = require("./pdfConversionService");
 const { extractExpenseDocumentFromImages } = require("./ocrService");
-const { applyReviewRules } = require("./reviewService");
+const { addWarning, applyReviewRules } = require("./reviewService");
 const {
   approveReviewedDocument,
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
   findDocumentById,
+  findPotentialDuplicateDocument,
   getCompanyDashboardDocuments,
   listCompanyDocuments,
   updateDocumentStatus,
@@ -71,7 +72,11 @@ async function extractDocument(file, authContext) {
   try {
     await updateDocumentStatus(uploadedDocument.id, authContext.company._id, "processing");
     const imagePaths = await getOcrImagePaths(file);
-    const extracted = applyReviewRules(await extractExpenseDocumentFromImages(imagePaths));
+    const extracted = await applyAutomaticChecks(
+      await extractExpenseDocumentFromImages(imagePaths),
+      authContext,
+      uploadedDocument.id
+    );
 
     return updateExtractedDocument(uploadedDocument.id, authContext.company._id, {
       model: config.model,
@@ -90,6 +95,20 @@ async function getDocument(documentId, authContext) {
 
 async function listDocuments(filters, authContext) {
   return listCompanyDocuments(authContext.company._id, filters || {});
+}
+
+async function applyAutomaticChecks(data, authContext, documentId) {
+  const checkedData = applyReviewRules(data);
+  const duplicate = await findPotentialDuplicateDocument(authContext.company._id, checkedData, documentId);
+
+  if (duplicate) {
+    addWarning(checkedData.warnings, "possible_duplicate");
+    checkedData.duplicateDocumentId = duplicate._id.toString();
+  } else {
+    delete checkedData.duplicateDocumentId;
+  }
+
+  return checkedData;
 }
 
 function getCurrentMonthRange() {
@@ -160,7 +179,7 @@ async function saveReviewedDocument(documentId, data, authContext) {
     throw new HttpError(400, "Липсват прегледани данни за документа.");
   }
 
-  const reviewedData = applyReviewRules(data);
+  const reviewedData = await applyAutomaticChecks(data, authContext, documentId);
   return updateReviewedDocument(documentId, reviewedData, authContext.company._id);
 }
 
@@ -169,7 +188,12 @@ async function approveDocument(documentId, data, authContext) {
     throw new HttpError(400, "Липсват данни за одобряване.");
   }
 
-  return approveReviewedDocument(documentId, data, authContext.company._id);
+  const reviewedData = await applyAutomaticChecks(data, authContext, documentId);
+  if (reviewedData.needsReview) {
+    throw new HttpError(400, "Документът все още има липсващи или рискови полета и не може да бъде одобрен.");
+  }
+
+  return approveReviewedDocument(documentId, reviewedData, authContext.company._id);
 }
 
 module.exports = {

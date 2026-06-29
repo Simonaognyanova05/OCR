@@ -155,6 +155,28 @@ async function getCompanyDashboardDocuments(companyId, { dateFrom, dateTo }) {
     .lean();
 }
 
+async function findPotentialDuplicateDocument(companyId, documentData, excludeDocumentId) {
+  if (!documentData?.documentNumber || !documentData?.supplierName || documentData.totalAmount === null || documentData.totalAmount === undefined) {
+    return null;
+  }
+
+  const query = {
+    companyId,
+    status: { $ne: "failed" },
+    "data.documentNumber": documentData.documentNumber,
+    "data.supplierName": documentData.supplierName,
+    "data.totalAmount": documentData.totalAmount
+  };
+
+  if (excludeDocumentId) {
+    query._id = { $ne: excludeDocumentId };
+  }
+
+  return Document.findOne(query)
+    .select("_id data.documentNumber data.supplierName data.totalAmount status")
+    .lean();
+}
+
 async function findDocumentById(documentId, companyId) {
   const query = { _id: documentId };
   if (companyId) query.companyId = companyId;
@@ -280,6 +302,7 @@ module.exports = {
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
   findDocumentById,
+  findPotentialDuplicateDocument,
   getCompanyDashboardDocuments,
   listCompanyDocuments,
   listCompanyDocumentsForMonthlyReport,

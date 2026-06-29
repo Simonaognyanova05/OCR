@@ -50,6 +50,11 @@ const reviewReasonLabels = {
   unclear_image: "Изображението не е достатъчно ясно"
 };
 
+const warningLabels = {
+  amount_mismatch: "Общата сума не съвпада с основа + ДДС",
+  possible_duplicate: "Възможен дубликат: същият номер, доставчик и сума вече съществуват"
+};
+
 function valueOrEmpty(value) {
   return value === null || value === undefined ? "" : cleanDisplayText(value);
 }
@@ -221,6 +226,10 @@ function getReviewReasonLabel(reason) {
   return reviewReasonLabels[reason] || reason;
 }
 
+function getWarningLabel(warning) {
+  return warningLabels[warning] || warning;
+}
+
 function getItems(data) {
   if (Array.isArray(data.items)) {
     return data.items;
@@ -253,7 +262,8 @@ function getSummaryRows(document) {
     ["Начин на плащане", getPaymentMethodLabel(getDataValue(data, "paymentMethod", "payment.method"))],
     ["Увереност", data.confidence],
     ["Нуждае се от преглед", data.needsReview || data.needs_review ? "Да" : "Не"],
-    ["Причини за преглед", (data.reviewReasons || data.review_reasons || []).map(getReviewReasonLabel).join(", ")]
+    ["Причини за преглед", (data.reviewReasons || data.review_reasons || []).map(getReviewReasonLabel).join(", ")],
+    ["Предупреждения", (data.warnings || []).map(getWarningLabel).join(", ")]
   ];
 }
 

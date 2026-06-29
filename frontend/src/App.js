@@ -17,6 +17,11 @@ const reviewReasonLabels = {
   unclear_image: 'Документът не е достатъчно ясен',
 };
 
+const warningLabels = {
+  amount_mismatch: 'Общата сума не съвпада с основа + ДДС',
+  possible_duplicate: 'Възможен дубликат: същият номер, доставчик и сума вече съществуват',
+};
+
 const documentTypeLabels = {
   invoice: 'Фактура',
   receipt: 'Касова бележка',
@@ -754,6 +759,14 @@ function App() {
                         {[...warnings, ...(extracted.reviewReasons || []).map((reason) => reviewReasonLabels[reason] || reason)]
                           .filter(Boolean)
                           .map((warning) => <div key={warning}>⚠ {warning}</div>)}
+                      </div>
+                    )}
+
+                    {(extracted.warnings || []).length > 0 && (
+                      <div className="warning-box">
+                        {extracted.warnings.map((warning) => (
+                          <div key={warning}>⚠ {warningLabels[warning] || warning}</div>
+                        ))}
                       </div>
                     )}
 

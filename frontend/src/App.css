@@ -379,6 +379,15 @@ button:disabled {
   background: #fff4f2;
 }
 
+.warning-box {
+  margin-bottom: 16px;
+  border: 1px solid #f6d58b;
+  border-radius: 8px;
+  padding: 12px;
+  color: #7a4b00;
+  background: #fff8e7;
+}
+
 .edit-form {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
