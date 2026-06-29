@@ -10,6 +10,7 @@ const {
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
   findDocumentById,
+  getCompanyDashboardDocuments,
   listCompanyDocuments,
   updateDocumentStatus,
   updateExtractedDocument,
@@ -91,6 +92,69 @@ async function listDocuments(filters, authContext) {
   return listCompanyDocuments(authContext.company._id, filters || {});
 }
 
+function getCurrentMonthRange() {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
+
+  return {
+    month: start.toISOString().slice(0, 7),
+    dateFrom: start.toISOString().slice(0, 10),
+    dateTo: end.toISOString().slice(0, 10)
+  };
+}
+
+function toNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function addAmountToMap(map, key, amount) {
+  const safeKey = key || "Без категория";
+  map.set(safeKey, (map.get(safeKey) || 0) + amount);
+}
+
+function toSortedBreakdown(map, limit) {
+  return [...map.entries()]
+    .map(([name, totalAmount]) => ({ name, totalAmount }))
+    .sort((first, second) => second.totalAmount - first.totalAmount)
+    .slice(0, limit);
+}
+
+async function getDashboard(authContext) {
+  const monthRange = getCurrentMonthRange();
+  const documents = await getCompanyDashboardDocuments(authContext.company._id, monthRange);
+  const suppliers = new Map();
+  const categories = new Map();
+  const currencies = new Set();
+  let totalExpenses = 0;
+  let totalVat = 0;
+
+  for (const document of documents) {
+    const data = document.data || {};
+    const amount = toNumber(data.totalAmount);
+    const vat = toNumber(data.vatAmount);
+
+    totalExpenses += amount;
+    totalVat += vat;
+    if (data.currency) currencies.add(data.currency);
+    addAmountToMap(suppliers, data.supplierName || "Без доставчик", amount);
+    addAmountToMap(categories, data.category || "Без категория", amount);
+  }
+
+  return {
+    month: monthRange.month,
+    dateFrom: monthRange.dateFrom,
+    dateTo: monthRange.dateTo,
+    currency: currencies.size === 0 ? "BGN" : currencies.size === 1 ? [...currencies][0] : "mixed",
+    totalExpenses,
+    totalVat,
+    documentCount: documents.length,
+    topSuppliers: toSortedBreakdown(suppliers, 5),
+    expensesByCategory: toSortedBreakdown(categories)
+  };
+}
+
 async function saveReviewedDocument(documentId, data, authContext) {
   if (!data) {
     throw new HttpError(400, "Липсват прегледани данни за документа.");
@@ -111,6 +175,7 @@ async function approveDocument(documentId, data, authContext) {
 module.exports = {
   approveDocument,
   extractDocument,
+  getDashboard,
   getDocument,
   listDocuments,
   saveReviewedDocument,

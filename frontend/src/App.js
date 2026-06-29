@@ -33,6 +33,17 @@ function getCurrentMonthValue() {
   return new Date().toISOString().slice(0, 7);
 }
 
+function formatMoney(value, currency = 'BGN') {
+  const amount = new Intl.NumberFormat('bg-BG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
+
+  if (currency === 'BGN') return `${amount} лв`;
+  if (currency === 'mixed') return `${amount} смесена валута`;
+  return `${amount} ${currency || 'BGN'}`;
+}
+
 function getFieldValue(object, path) {
   return path.split('.').reduce((current, key) => current?.[key], object);
 }
@@ -141,6 +152,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [draft, setDraft] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [dashboard, setDashboard] = useState(null);
   const [reportMonth, setReportMonth] = useState(getCurrentMonthValue);
   const [documentFilters, setDocumentFilters] = useState({
     dateFrom: '',
@@ -171,7 +183,10 @@ function App() {
   }, [auth]);
 
   useEffect(() => {
-    if (auth?.token) loadDocuments();
+    if (auth?.token) {
+      loadDashboard();
+      loadDocuments();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth?.token]);
 
@@ -222,6 +237,22 @@ function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error?.message || 'Списъкът с документи не беше зареден.');
       setDocuments(data.documents || []);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
+  async function loadDashboard() {
+    if (!auth?.token) return;
+
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/dashboard`, {
+        headers: authHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error?.message || 'Таблото не беше заредено.');
+      setDashboard(data);
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -319,6 +350,7 @@ function App() {
       setResult(data);
       setDraft(data.data);
       setNotice('Данните са извлечени. Прегледай и одобри документа.');
+      loadDashboard();
       loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
@@ -352,6 +384,7 @@ function App() {
 
       setResult(data);
       setNotice('Документът е качен със статус uploaded.');
+      loadDashboard();
       loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
@@ -389,6 +422,7 @@ function App() {
       setResult(data);
       setDraft(data.data);
       setNotice('Корекциите са запазени. Документът все още чака одобрение.');
+      loadDashboard();
       loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
@@ -415,6 +449,7 @@ function App() {
       setResult(data);
       setDraft(data.data);
       setNotice('Документът е одобрен.');
+      loadDashboard();
       loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
@@ -445,6 +480,7 @@ function App() {
       link.download = type === 'excel' ? 'ocr-export.xlsx' : 'ocr-export.pdf';
       link.click();
       window.URL.revokeObjectURL(url);
+      loadDashboard();
       loadDocuments();
     } catch (requestError) {
       setError(requestError.message);
@@ -549,6 +585,67 @@ function App() {
             <span>2. OCR / AI извличане</span>
             <span>3. Преглед</span>
             <span className="muted">4. Approve document</span>
+          </section>
+
+          <section className="dashboard-panel">
+            <div className="panel-heading">
+              <div>
+                <h2>Табло</h2>
+                <p className="panel-subtitle">Бизнес преглед за текущия месец: {dashboard?.month || '-'}</p>
+              </div>
+              <button type="button" className="secondary-button" onClick={loadDashboard}>
+                Обнови таблото
+              </button>
+            </div>
+
+            <div className="dashboard-metrics">
+              <div>
+                <span>Общо разходи този месец</span>
+                <strong>{formatMoney(dashboard?.totalExpenses, dashboard?.currency)}</strong>
+              </div>
+              <div>
+                <span>Общо ДДС</span>
+                <strong>{formatMoney(dashboard?.totalVat, dashboard?.currency)}</strong>
+              </div>
+              <div>
+                <span>Брой документи</span>
+                <strong>{dashboard?.documentCount || 0}</strong>
+              </div>
+            </div>
+
+            <div className="dashboard-breakdowns">
+              <section>
+                <h3>Топ 5 доставчици</h3>
+                {(dashboard?.topSuppliers || []).length === 0 ? (
+                  <p className="empty">Няма одобрени документи за текущия месец.</p>
+                ) : (
+                  <ul className="breakdown-list">
+                    {dashboard.topSuppliers.map((supplier) => (
+                      <li key={supplier.name}>
+                        <span>{supplier.name}</span>
+                        <strong>{formatMoney(supplier.totalAmount, dashboard.currency)}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section>
+                <h3>Разходи по категории</h3>
+                {(dashboard?.expensesByCategory || []).length === 0 ? (
+                  <p className="empty">Няма категории за текущия месец.</p>
+                ) : (
+                  <ul className="breakdown-list">
+                    {dashboard.expensesByCategory.map((category) => (
+                      <li key={category.name}>
+                        <span>{category.name}</span>
+                        <strong>{formatMoney(category.totalAmount, dashboard.currency)}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </div>
           </section>
 
           <section className="documents-panel">

@@ -64,6 +64,7 @@
 .auth-panel,
 .company-panel,
 .account-bar,
+.dashboard-panel,
 .documents-panel {
   border: 1px solid #dce2ee;
   border-radius: 8px;
@@ -74,6 +75,7 @@
 .auth-panel,
 .company-panel,
 .account-bar,
+.dashboard-panel,
 .documents-panel {
   margin-bottom: 20px;
 }
@@ -90,6 +92,12 @@
   margin: 0;
 }
 
+.panel-subtitle {
+  margin: 6px 0 0;
+  color: #52627a;
+  font-size: 14px;
+}
+
 .panel-tools {
   display: flex;
   align-items: end;
@@ -100,6 +108,70 @@
 
 .compact-field {
   min-width: 180px;
+}
+
+.dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.dashboard-metrics div {
+  border: 1px solid #dce2ee;
+  border-radius: 8px;
+  padding: 16px;
+  background: #f9fbff;
+}
+
+.dashboard-metrics span {
+  display: block;
+  margin-bottom: 8px;
+  color: #52627a;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.dashboard-metrics strong {
+  display: block;
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-breakdowns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dashboard-breakdowns h3 {
+  margin: 0 0 10px;
+}
+
+.breakdown-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breakdown-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #e4e9f2;
+  padding: 8px 0;
+}
+
+.breakdown-list span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.breakdown-list strong {
+  white-space: nowrap;
 }
 
 .filters-grid {
@@ -384,6 +456,8 @@ pre {
   }
 
   .mvp-flow,
+  .dashboard-metrics,
+  .dashboard-breakdowns,
   .edit-form,
   .filters-grid,
   .review-fields {

@@ -1,6 +1,7 @@
 const {
   approveDocument,
   extractDocument,
+  getDashboard,
   getDocument,
   listDocuments,
   saveReviewedDocument,
@@ -43,6 +44,15 @@ async function listDocumentsHandler(req, res, next) {
   }
 }
 
+async function getDashboardHandler(req, res, next) {
+  try {
+    const result = await getDashboard(req.auth);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function saveReviewHandler(req, res, next) {
   try {
     const updated = await saveReviewedDocument(req.params.id, req.body?.data, req.auth);
@@ -64,6 +74,7 @@ async function approveDocumentHandler(req, res, next) {
 module.exports = {
   approveDocumentHandler,
   extractDocumentHandler,
+  getDashboardHandler,
   getDocumentHandler,
   listDocumentsHandler,
   saveReviewHandler,
