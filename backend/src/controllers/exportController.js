@@ -1,4 +1,8 @@
-const { generateExcelExport, generatePdfExport } = require("../services/exportService");
+const {
+  generateExcelExport,
+  generateMonthlyPdfReport,
+  generatePdfExport
+} = require("../services/exportService");
 
 function sendExport(res, exportFile) {
   res.setHeader("Content-Type", exportFile.contentType);
@@ -27,7 +31,17 @@ async function exportPdfHandler(req, res, next) {
   }
 }
 
+async function exportMonthlyPdfReportHandler(req, res, next) {
+  try {
+    const exportFile = await generateMonthlyPdfReport(req.auth.company._id, req.query.month);
+    sendExport(res, exportFile);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   exportExcelHandler,
+  exportMonthlyPdfReportHandler,
   exportPdfHandler,
 };

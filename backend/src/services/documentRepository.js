@@ -129,6 +129,19 @@ async function listCompanyDocuments(companyId, filters) {
   };
 }
 
+async function listCompanyDocumentsForMonthlyReport(companyId, { dateFrom, dateTo }) {
+  return Document.find({
+    companyId,
+    status: { $in: ["approved", "exported"] },
+    "data.issueDate": {
+      $gte: dateFrom,
+      $lte: dateTo
+    }
+  })
+    .sort({ "data.issueDate": 1, createdAt: 1 })
+    .lean();
+}
+
 async function findDocumentById(documentId, companyId) {
   const query = { _id: documentId };
   if (companyId) query.companyId = companyId;
@@ -255,6 +268,7 @@ module.exports = {
   createUploadedDocument,
   findDocumentById,
   listCompanyDocuments,
+  listCompanyDocumentsForMonthlyReport,
   markDocumentExported,
   updateDocumentStatus,
   updateExtractedDocument,

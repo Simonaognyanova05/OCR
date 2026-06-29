@@ -29,6 +29,10 @@ const paymentMethodLabels = {
   unknown: 'Неизвестно',
 };
 
+function getCurrentMonthValue() {
+  return new Date().toISOString().slice(0, 7);
+}
+
 function getFieldValue(object, path) {
   return path.split('.').reduce((current, key) => current?.[key], object);
 }
@@ -137,6 +141,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [draft, setDraft] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [reportMonth, setReportMonth] = useState(getCurrentMonthValue);
   const [documentFilters, setDocumentFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -446,6 +451,33 @@ function App() {
     }
   }
 
+  async function downloadMonthlyPdfReport() {
+    if (!reportMonth) {
+      setError('Избери месец за PDF отчета.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/reports/monthly/pdf?month=${reportMonth}`, {
+        headers: authHeaders(),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data?.error?.message || 'PDF отчетът не беше генериран.');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `pdf-otchet-${reportMonth}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
   const extracted = draft;
   const warnings = getImportantWarnings(extracted);
 
@@ -522,9 +554,18 @@ function App() {
           <section className="documents-panel">
             <div className="panel-heading">
               <h2>Списък с документи</h2>
-              <button type="button" className="secondary-button" onClick={() => loadDocuments()}>
-                Обнови
-              </button>
+              <div className="panel-tools">
+                <label className="field compact-field">
+                  <span>Месец за PDF отчет</span>
+                  <input type="month" value={reportMonth} onChange={(event) => setReportMonth(event.target.value)} />
+                </label>
+                <button type="button" className="secondary-button" onClick={downloadMonthlyPdfReport}>
+                  PDF отчет за месец
+                </button>
+                <button type="button" className="secondary-button" onClick={() => loadDocuments()}>
+                  Обнови
+                </button>
+              </div>
             </div>
             <div className="filters-grid">
               <label className="field"><span>От дата</span><input type="date" value={documentFilters.dateFrom} onChange={(event) => setDocumentFilters({ ...documentFilters, dateFrom: event.target.value })} /></label>

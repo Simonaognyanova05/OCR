@@ -1,7 +1,12 @@
 const ExcelJS = require("exceljs");
 const PDFDocument = require("pdfkit");
 const fs = require("node:fs");
-const { findDocumentById, markDocumentExported } = require("./documentRepository");
+const {
+  findDocumentById,
+  listCompanyDocumentsForMonthlyReport,
+  markDocumentExported
+} = require("./documentRepository");
+const { HttpError } = require("../utils/httpError");
 const { cleanDisplayText } = require("../utils/textQuality");
 const { config } = require("../config/env");
 
@@ -127,6 +132,91 @@ function formatAccountingCellValue(value) {
   return cleanDisplayText(value);
 }
 
+function toNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function getReportMonthRange(month) {
+  if (!/^\d{4}-\d{2}$/.test(month || "")) {
+    throw new HttpError(400, "Подай месец във формат YYYY-MM.");
+  }
+
+  const [year, monthNumber] = month.split("-").map(Number);
+  if (monthNumber < 1 || monthNumber > 12) {
+    throw new HttpError(400, "Невалиден месец за PDF отчет.");
+  }
+
+  const start = new Date(Date.UTC(year, monthNumber - 1, 1));
+  const end = new Date(Date.UTC(year, monthNumber, 0));
+
+  return {
+    label: month,
+    dateFrom: start.toISOString().slice(0, 10),
+    dateTo: end.toISOString().slice(0, 10)
+  };
+}
+
+function getDocumentCurrency(documents) {
+  const currencies = [...new Set(documents.map((document) => document.data?.currency).filter(Boolean))];
+  if (currencies.length === 1) return currencies[0];
+  if (currencies.length === 0) return "BGN";
+  return "смесена валута";
+}
+
+function formatMoney(value, currency) {
+  const amount = new Intl.NumberFormat("bg-BG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(toNumber(value));
+
+  if (currency === "BGN") return `${amount} лв`;
+  if (currency && currency !== "смесена валута") return `${amount} ${currency}`;
+  return amount;
+}
+
+function buildMonthlyReport(documents, monthRange) {
+  const currency = getDocumentCurrency(documents);
+  const categories = new Map();
+  const suppliers = new Map();
+  let totalAmount = 0;
+  let totalVat = 0;
+
+  for (const document of documents) {
+    const data = document.data || {};
+    const amount = toNumber(data.totalAmount);
+    const vat = toNumber(data.vatAmount);
+    const supplier = cleanDisplayText(data.supplierName) || "Без доставчик";
+    const category = cleanDisplayText(data.category) || "Без категория";
+
+    totalAmount += amount;
+    totalVat += vat;
+    suppliers.set(supplier, (suppliers.get(supplier) || 0) + amount);
+    categories.set(category, (categories.get(category) || 0) + amount);
+  }
+
+  const topSupplier = [...suppliers.entries()]
+    .sort((first, second) => second[1] - first[1])
+    .at(0);
+
+  return {
+    month: monthRange.label,
+    dateFrom: monthRange.dateFrom,
+    dateTo: monthRange.dateTo,
+    currency,
+    totalDocuments: documents.length,
+    totalAmount,
+    totalVat,
+    topSupplier: topSupplier
+      ? { name: topSupplier[0], amount: topSupplier[1] }
+      : { name: "-", amount: 0 },
+    categories: [...categories.entries()]
+      .map(([name, amount]) => ({ name, amount }))
+      .sort((first, second) => second.amount - first.amount),
+    documents: documents.map((document) => buildAccountingExportRow(document))
+  };
+}
+
 function getReviewReasonLabel(reason) {
   return reviewReasonLabels[reason] || reason;
 }
@@ -174,8 +264,6 @@ function ensurePdfSpace(pdf, neededHeight) {
 }
 
 function drawSummaryRow(pdf, fonts, label, value) {
-  const startX = pdf.page.margins.left;
-  const startY = pdf.y;
   const labelWidth = 145;
   const valueWidth = pdf.page.width - pdf.page.margins.left - pdf.page.margins.right - labelWidth;
   const text = String(valueOrEmpty(value));
@@ -186,16 +274,22 @@ function drawSummaryRow(pdf, fonts, label, value) {
   ) + 5;
 
   ensurePdfSpace(pdf, rowHeight);
+  const startX = pdf.page.margins.left;
+  const startY = pdf.y;
   pdf.font(fonts.bold).fontSize(9).text(label, startX, startY, { width: labelWidth });
   pdf.font(fonts.regular).fontSize(9).text(text || "-", startX + labelWidth, startY, { width: valueWidth });
   pdf.y = startY + rowHeight;
 }
 
+function getItemDisplayName(item, index) {
+  const name = valueOrEmpty(item.name || item.description_bg || item.description || item.description_raw);
+  return name && name !== "[нечетим текст]" ? name : `Артикул ${index + 1}`;
+}
+
 function drawLineItem(pdf, fonts, item, index) {
-  const startX = pdf.page.margins.left;
   const descriptionWidth = 245;
   const metaWidth = pdf.page.width - pdf.page.margins.left - pdf.page.margins.right - descriptionWidth;
-  const description = `${index + 1}. ${valueOrEmpty(item.name) || "-"}`;
+  const description = `${index + 1}. ${getItemDisplayName(item, index)}`;
   const meta = [
     `Кол.: ${valueOrEmpty(item.quantity) || "-"}`,
     `Ед. цена: ${valueOrEmpty(item.unitPrice) || "-"}`,
@@ -206,9 +300,10 @@ function drawLineItem(pdf, fonts, item, index) {
     pdf.heightOfString(meta, { width: metaWidth }),
     18
   ) + 8;
-  const startY = pdf.y;
 
   ensurePdfSpace(pdf, rowHeight);
+  const startX = pdf.page.margins.left;
+  const startY = pdf.y;
   pdf.font(fonts.bold).fontSize(9).text(description, startX, startY, { width: descriptionWidth });
   pdf.font(fonts.regular).fontSize(9).text(meta, startX + descriptionWidth, startY, { width: metaWidth });
   pdf.moveTo(startX, startY + rowHeight - 3)
@@ -216,6 +311,119 @@ function drawLineItem(pdf, fonts, item, index) {
     .strokeColor("#dddddd")
     .stroke();
   pdf.y = startY + rowHeight;
+}
+
+function drawMonthlyMetric(pdf, fonts, label, value) {
+  const width = (pdf.page.width - pdf.page.margins.left - pdf.page.margins.right - 24) / 2;
+  const x = pdf.x;
+  const y = pdf.y;
+
+  pdf.roundedRect(x, y, width, 52, 6).fillAndStroke("#f7f9fc", "#dce2ee");
+  pdf.fillColor("#52627a").font(fonts.bold).fontSize(8).text(label, x + 12, y + 10, { width: width - 24 });
+  pdf.fillColor("#111827").font(fonts.bold).fontSize(13).text(value, x + 12, y + 26, { width: width - 24 });
+  pdf.fillColor("#111827");
+}
+
+function drawMonthlySectionTitle(pdf, fonts, title) {
+  ensurePdfSpace(pdf, 30);
+  pdf.moveDown(0.8);
+  pdf.font(fonts.bold).fontSize(13).fillColor("#111827").text(title);
+  pdf.moveDown(0.4);
+}
+
+function drawMonthlySimpleRow(pdf, fonts, columns) {
+  const availableWidth = pdf.page.width - pdf.page.margins.left - pdf.page.margins.right;
+  const rowHeight = 22;
+  const widths = columns.map((column) => column.width * availableWidth);
+
+  ensurePdfSpace(pdf, rowHeight + 2);
+  const startX = pdf.page.margins.left;
+  const startY = pdf.y;
+  columns.reduce((x, column, index) => {
+    pdf.font(column.bold ? fonts.bold : fonts.regular)
+      .fontSize(column.size || 8)
+      .fillColor(column.color || "#111827")
+      .text(String(column.value || "-"), x, startY + 5, {
+        width: widths[index] - 6,
+        ellipsis: true
+      });
+    return x + widths[index];
+  }, startX);
+
+  pdf.moveTo(startX, startY + rowHeight)
+    .lineTo(pdf.page.width - pdf.page.margins.right, startY + rowHeight)
+    .strokeColor("#e4e9f2")
+    .stroke();
+  pdf.y = startY + rowHeight + 2;
+}
+
+function generateMonthlyPdfReportBuffer(report) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    const pdf = new PDFDocument({ margin: 42, size: "A4" });
+
+    pdf.on("data", (chunk) => chunks.push(chunk));
+    pdf.on("end", () => resolve(Buffer.concat(chunks)));
+    pdf.on("error", reject);
+
+    const fonts = registerPdfFonts(pdf);
+    const currency = report.currency;
+    const totalLabel = currency === "смесена валута" ? "смесена валута" : currency;
+
+    pdf.font(fonts.bold).fontSize(18).fillColor("#111827").text(`Месечен PDF отчет: ${report.month}`);
+    pdf.font(fonts.regular).fontSize(9).fillColor("#52627a").text(`Период: ${report.dateFrom} - ${report.dateTo}`);
+    pdf.moveDown(1);
+
+    const metricStartX = pdf.x;
+    const metricStartY = pdf.y;
+    drawMonthlyMetric(pdf, fonts, "Общо документи", String(report.totalDocuments));
+    pdf.x = metricStartX + (pdf.page.width - pdf.page.margins.left - pdf.page.margins.right + 24) / 2;
+    pdf.y = metricStartY;
+    drawMonthlyMetric(pdf, fonts, "Обща сума", `${formatMoney(report.totalAmount, currency)} ${totalLabel === "смесена валута" ? "(смесена валута)" : ""}`.trim());
+    pdf.x = metricStartX;
+    pdf.y = metricStartY + 66;
+    drawMonthlyMetric(pdf, fonts, "Общо ДДС", formatMoney(report.totalVat, currency));
+    pdf.x = metricStartX + (pdf.page.width - pdf.page.margins.left - pdf.page.margins.right + 24) / 2;
+    pdf.y = metricStartY + 66;
+    drawMonthlyMetric(pdf, fonts, "Най-голям доставчик", `${report.topSupplier.name} (${formatMoney(report.topSupplier.amount, currency)})`);
+    pdf.x = metricStartX;
+    pdf.y = metricStartY + 126;
+
+    drawMonthlySectionTitle(pdf, fonts, "Разходи по категории");
+    if (report.categories.length === 0) {
+      pdf.font(fonts.regular).fontSize(9).text("Няма одобрени документи за този месец.");
+    } else {
+      for (const category of report.categories) {
+        drawMonthlySimpleRow(pdf, fonts, [
+          { value: category.name, width: 0.72, bold: true },
+          { value: formatMoney(category.amount, currency), width: 0.28 }
+        ]);
+      }
+    }
+
+    drawMonthlySectionTitle(pdf, fonts, "Списък с документи");
+    drawMonthlySimpleRow(pdf, fonts, [
+      { value: "Дата", width: 0.13, bold: true, color: "#52627a" },
+      { value: "Тип", width: 0.13, bold: true, color: "#52627a" },
+      { value: "Номер", width: 0.13, bold: true, color: "#52627a" },
+      { value: "Доставчик", width: 0.25, bold: true, color: "#52627a" },
+      { value: "Категория", width: 0.18, bold: true, color: "#52627a" },
+      { value: "Сума", width: 0.18, bold: true, color: "#52627a" }
+    ]);
+
+    for (const document of report.documents) {
+      drawMonthlySimpleRow(pdf, fonts, [
+        { value: document.issueDate, width: 0.13 },
+        { value: document.documentType, width: 0.13 },
+        { value: document.documentNumber, width: 0.13 },
+        { value: document.supplierName, width: 0.25 },
+        { value: document.category, width: 0.18 },
+        { value: formatMoney(document.totalAmount, currency), width: 0.18 }
+      ]);
+    }
+
+    pdf.end();
+  });
 }
 
 async function generateExcelExport(documentId, companyId) {
@@ -327,7 +535,21 @@ async function generatePdfExport(documentId, companyId) {
   };
 }
 
+async function generateMonthlyPdfReport(companyId, month) {
+  const monthRange = getReportMonthRange(month);
+  const documents = await listCompanyDocumentsForMonthlyReport(companyId, monthRange);
+  const report = buildMonthlyReport(documents, monthRange);
+  const buffer = await generateMonthlyPdfReportBuffer(report);
+
+  return {
+    buffer,
+    filename: `monthly-report-${monthRange.label}.pdf`,
+    contentType: "application/pdf"
+  };
+}
+
 module.exports = {
   generateExcelExport,
+  generateMonthlyPdfReport,
   generatePdfExport
 };
