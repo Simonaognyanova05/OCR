@@ -1,17 +1,16 @@
 import './App.css';
 import { useCallback, useEffect, useState } from 'react';
-import AccountBar from './components/AccountBar';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import AppShell from './components/AppShell';
 import AuthPanel from './components/AuthPanel';
-import CompanyPanel from './components/CompanyPanel';
-import DashboardPanel from './components/DashboardPanel';
-import DocumentsPanel from './components/DocumentsPanel';
-import MvpFlow from './components/MvpFlow';
-import ReviewPanel from './components/ReviewPanel';
-import UploadPanel from './components/UploadPanel';
 import { useAuth } from './hooks/useAuth';
 import { useDashboard } from './hooks/useDashboard';
 import { initialDocumentFilters, useDocuments } from './hooks/useDocuments';
 import { useHealth } from './hooks/useHealth';
+import CompanyPage from './pages/CompanyPage';
+import DashboardPage from './pages/DashboardPage';
+import DocumentsPage from './pages/DocumentsPage';
+import WorkspacePage from './pages/WorkspacePage';
 import { login, register } from './services/authService';
 import { updateCompany } from './services/companyService';
 import { approveDocument, extractDocument, saveDocumentReview, uploadDocument } from './services/documentService';
@@ -19,17 +18,8 @@ import { downloadDocumentExport, downloadMonthlyPdfReport } from './services/exp
 import { getCurrentMonthValue } from './utils/date';
 import { setFieldValue } from './utils/form';
 
-function App() {
-  const health = useHealth();
-  const {
-    auth,
-    companyDraft,
-    logout,
-    saveAuth,
-    updateCompanyDraft,
-  } = useAuth();
-  const [authMode, setAuthMode] = useState('login');
-  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', company_name: '' });
+function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, updateCompanyDraft }) {
+  const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [result, setResult] = useState(null);
@@ -83,25 +73,6 @@ function App() {
     ]);
   }
 
-  async function handleAuthSubmit(event) {
-    event.preventDefault();
-    setLoading(true);
-    resetMessages();
-
-    try {
-      const data = authMode === 'register'
-        ? await register(authForm)
-        : await login(authForm);
-
-      saveAuth(data);
-      setNotice(authMode === 'register' ? 'Регистрацията е успешна.' : 'Успешен вход.');
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleCompanySave() {
     if (!companyDraft) return;
 
@@ -136,6 +107,7 @@ function App() {
       setResult(data);
       setDraft(data.data);
       setNotice('Данните са извлечени. Прегледай и одобри документа.');
+      navigate('/workspace');
       refreshBusinessData();
     } catch (requestError) {
       setError(requestError.message);
@@ -159,6 +131,7 @@ function App() {
       const data = await uploadDocument(file, auth.token);
       setResult(data);
       setNotice('Документът е качен със статус uploaded.');
+      navigate('/workspace');
       refreshBusinessData();
     } catch (requestError) {
       setError(requestError.message);
@@ -185,6 +158,7 @@ function App() {
 
     setResult(data);
     setDraft(data.data);
+    navigate('/workspace');
   }
 
   async function handleSaveReview() {
@@ -258,82 +232,172 @@ function App() {
   }
 
   return (
-    <main className="app">
-      <section className="header">
-        <div>
-          <p className="eyebrow">MVP: фактури и касови бележки</p>
-          <h1>Качване, извличане, преглед и одобрение</h1>
-        </div>
-        <div className={health?.ok ? 'status ok' : 'status'}>
-          {health?.ok ? `Backend активен: ${health.model}` : 'Backend не е активен'}
-        </div>
-      </section>
-
-      {!auth ? (
-        <AuthPanel
-          authForm={authForm}
-          authMode={authMode}
-          error={error}
-          loading={loading}
-          notice={notice}
-          onAuthFormChange={setAuthForm}
-          onAuthModeChange={setAuthMode}
-          onSubmit={handleAuthSubmit}
+    <Routes>
+      <Route element={<AppShell auth={auth} health={health} onLogout={logoutAndReset} />}>
+        <Route index element={<DashboardPage dashboard={dashboard} onRefresh={loadDashboard} />} />
+        <Route
+          path="documents"
+          element={(
+            <DocumentsPage
+              documentFilters={documentFilters}
+              documents={documents}
+              onClearFilters={handleClearFilters}
+              onDownloadMonthlyPdfReport={handleDownloadMonthlyPdfReport}
+              onFilterChange={setDocumentFilters}
+              onOpenDocument={handleOpenDocument}
+              onRefresh={() => loadDocuments()}
+              reportMonth={reportMonth}
+              setReportMonth={setReportMonth}
+            />
+          )}
         />
-      ) : (
-        <>
-          <AccountBar auth={auth} onLogout={logoutAndReset} />
-          <CompanyPanel
-            auth={auth}
-            companyDraft={companyDraft}
-            onSave={handleCompanySave}
-            onUpdate={updateCompanyDraft}
-            saving={saving}
-          />
-          <MvpFlow />
-          <DashboardPanel dashboard={dashboard} onRefresh={loadDashboard} />
-          <DocumentsPanel
-            documentFilters={documentFilters}
-            documents={documents}
-            onClearFilters={handleClearFilters}
-            onDownloadMonthlyPdfReport={handleDownloadMonthlyPdfReport}
-            onFilterChange={setDocumentFilters}
-            onOpenDocument={handleOpenDocument}
-            onRefresh={() => loadDocuments()}
-            reportMonth={reportMonth}
-            setReportMonth={setReportMonth}
-          />
-
-          <section className="workspace">
-            <UploadPanel
+        <Route
+          path="workspace"
+          element={(
+            <WorkspacePage
               dragActive={dragActive}
+              draft={draft}
               error={error}
               file={file}
               loading={loading}
               notice={notice}
+              onApprove={handleApproveDocument}
               onDownloadExport={handleDownloadExport}
               onDragLeave={() => setDragActive(false)}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onFileChange={setFile}
-              onSubmit={handleSubmit}
-              onUploadOnly={handleUploadOnly}
-              result={result}
-            />
-            <ReviewPanel
-              draft={draft}
-              onApprove={handleApproveDocument}
               onSaveReview={handleSaveReview}
+              onSubmit={handleSubmit}
               onUpdateDraft={updateDraft}
+              onUploadOnly={handleUploadOnly}
               result={result}
               saving={saving}
             />
-          </section>
-        </>
-      )}
+          )}
+        />
+        <Route
+          path="company"
+          element={(
+            <CompanyPage
+              auth={auth}
+              companyDraft={companyDraft}
+              onSave={handleCompanySave}
+              onUpdate={updateCompanyDraft}
+              saving={saving}
+            />
+          )}
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
+  );
+}
+
+function LoginPage({ authForm, authMode, error, loading, notice, onAuthFormChange, onAuthModeChange, onSubmit, health }) {
+  return (
+    <main className="login-page">
+      <section className="login-hero">
+        <div className="brand">
+          <div className="brand-mark">O</div>
+          <div>
+            <strong>OCR Finance</strong>
+            <span>Invoice intelligence</span>
+          </div>
+        </div>
+        <h1>Премиум OCR платформа за фактури и касови бележки</h1>
+        <p>Извличане, преглед, контрол, отчети и бизнес табло в един подреден работен процес.</p>
+        <div className={health?.ok ? 'status ok' : 'status'}>
+          {health?.ok ? `Backend активен: ${health.model}` : 'Backend не е активен'}
+        </div>
+      </section>
+      <AuthPanel
+        authForm={authForm}
+        authMode={authMode}
+        error={error}
+        loading={loading}
+        notice={notice}
+        onAuthFormChange={onAuthFormChange}
+        onAuthModeChange={onAuthModeChange}
+        onSubmit={onSubmit}
+      />
     </main>
   );
 }
 
-export default App;
+function AppContent() {
+  const health = useHealth();
+  const {
+    auth,
+    companyDraft,
+    logout,
+    saveAuth,
+    updateCompanyDraft,
+  } = useAuth();
+  const [authMode, setAuthMode] = useState('login');
+  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', company_name: '' });
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [loading, setLoading] = useState(false);
 
+  function resetMessages() {
+    setError('');
+    setNotice('');
+  }
+
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+    setLoading(true);
+    resetMessages();
+
+    try {
+      const data = authMode === 'register'
+        ? await register(authForm)
+        : await login(authForm);
+
+      saveAuth(data);
+      setNotice(authMode === 'register' ? 'Регистрацията е успешна.' : 'Успешен вход.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!auth) {
+    return (
+      <LoginPage
+        authForm={authForm}
+        authMode={authMode}
+        error={error}
+        health={health}
+        loading={loading}
+        notice={notice}
+        onAuthFormChange={setAuthForm}
+        onAuthModeChange={setAuthMode}
+        onSubmit={handleAuthSubmit}
+      />
+    );
+  }
+
+  return (
+    <AuthenticatedApp
+      auth={auth}
+      companyDraft={companyDraft}
+      health={health}
+      logout={logout}
+      saveAuth={saveAuth}
+      updateCompanyDraft={updateCompanyDraft}
+    />
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+
+export default App;

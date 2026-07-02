@@ -18,6 +18,16 @@ frontend/src/hooks/       преизползваема state и async логик
 frontend/src/utils/       форматиране, form helpers, localStorage helpers
 frontend/src/constants/   етикети и текстове за статуси/предупреждения
 frontend/src/config/      API конфигурация
+frontend/src/pages/       страници за react-router-dom
+```
+
+Frontend-ът използва `react-router-dom` за отделни страници:
+
+```text
+/           Табло
+/documents  Документи
+/workspace  Качване и преглед
+/company    Фирма
 ```
 
 Backend структура:
