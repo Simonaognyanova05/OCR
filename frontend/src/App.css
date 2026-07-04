@@ -19,6 +19,7 @@
 }
 
 body {
+  margin: 0;
   background:
     radial-gradient(circle at top left, rgba(29, 78, 216, 0.12), transparent 32rem),
     linear-gradient(180deg, #fbfdff 0%, var(--bg) 42%, #eef3fa 100%);
@@ -80,6 +81,7 @@ body {
   color: var(--muted);
   text-decoration: none;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -114,6 +116,7 @@ body {
 .topbar h1 {
   margin: 0;
   font-size: 24px;
+  overflow-wrap: anywhere;
 }
 
 .topbar-actions {
@@ -121,9 +124,11 @@ body {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
+  min-width: 0;
 }
 
 .user-chip {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 8px 12px;
@@ -133,6 +138,8 @@ body {
 .user-chip strong,
 .user-chip span {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-chip span {
@@ -220,10 +227,9 @@ body {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(360px, 430px) minmax(720px, 1fr);
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
-  overflow-x: auto;
   padding-bottom: 4px;
 }
 
@@ -296,7 +302,7 @@ body {
 }
 
 .compact-field {
-  min-width: 180px;
+  min-width: min(180px, 100%);
 }
 
 .dashboard-metrics {
@@ -390,6 +396,7 @@ body {
   padding: 12px 14px;
   text-align: left;
   vertical-align: top;
+  overflow-wrap: anywhere;
 }
 
 .documents-table th {
@@ -423,6 +430,11 @@ body {
 .auth-tabs {
   justify-content: flex-start;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.auth-tabs button {
+  flex: 1 1 140px;
 }
 
 .auth-panel .edit-form {
@@ -537,6 +549,7 @@ button {
   box-shadow: 0 10px 22px rgba(29, 78, 216, 0.18);
   cursor: pointer;
   font-weight: 800;
+  max-width: 100%;
 }
 
 button:hover:not(:disabled) {
@@ -640,7 +653,7 @@ button:disabled {
 }
 
 .fields-panel .actions button {
-  min-width: 180px;
+  min-width: min(180px, 100%);
 }
 
 details {
@@ -683,9 +696,29 @@ pre {
   .topbar,
   .topbar-actions,
   .panel-heading,
-  .review-layout,
-  .login-page {
+  .review-layout {
     display: grid;
+  }
+
+  .login-page {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .login-page .auth-panel {
+    width: min(460px, 100%);
+    justify-self: center;
+  }
+
+  .topbar-actions,
+  .panel-tools {
+    justify-content: stretch;
+  }
+
+  .status,
+  .user-chip,
+  .topbar-actions button {
+    width: 100%;
   }
 
   .workspace {
@@ -735,5 +768,183 @@ pre {
   .page-hero h2,
   .login-hero h1 {
     font-size: 28px;
+  }
+
+  .page-hero,
+  .login-hero,
+  .upload-panel,
+  .result-panel,
+  .auth-panel,
+  .company-panel,
+  .account-bar,
+  .dashboard-panel,
+  .documents-panel {
+    padding: 16px;
+  }
+
+  .document-preview img,
+  .document-preview iframe {
+    height: min(64vh, 560px);
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    padding: 16px;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .main-nav {
+    margin-top: 16px;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  .nav-link {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .topbar {
+    padding: 14px 16px;
+  }
+
+  .topbar h1 {
+    font-size: 20px;
+  }
+
+  .page-content {
+    width: min(100% - 20px, 100%);
+    padding: 20px 0 32px;
+  }
+
+  .page-hero h2,
+  .login-hero h1 {
+    font-size: 24px;
+  }
+
+  .page-hero p,
+  .login-hero p {
+    font-size: 15px;
+  }
+
+  .login-page {
+    width: min(100% - 20px, 100%);
+    padding: 24px 0;
+    gap: 14px;
+  }
+
+  .login-hero {
+    min-height: auto;
+  }
+
+  .login-page .auth-panel {
+    width: 100%;
+  }
+
+  .panel-heading,
+  .account-bar,
+  .file-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-tools,
+  .actions {
+    width: 100%;
+  }
+
+  .panel-tools button,
+  .actions button {
+    width: 100%;
+  }
+
+  .dashboard-metrics strong {
+    font-size: 22px;
+  }
+
+  .breakdown-list li {
+    display: grid;
+  }
+
+  .table-wrap {
+    border: 0;
+    overflow: visible;
+  }
+
+  .documents-table,
+  .documents-table thead,
+  .documents-table tbody,
+  .documents-table tr,
+  .documents-table th,
+  .documents-table td {
+    display: block;
+  }
+
+  .documents-table {
+    min-width: 0;
+  }
+
+  .documents-table thead {
+    display: none;
+  }
+
+  .documents-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .documents-table tr {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .documents-table td {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 10px;
+    border-bottom: 1px solid #e4e9f2;
+    padding: 10px 12px;
+  }
+
+  .documents-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .documents-table td::before {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .documents-table td:nth-child(1)::before { content: "Дата"; }
+  .documents-table td:nth-child(2)::before { content: "Тип"; }
+  .documents-table td:nth-child(3)::before { content: "Доставчик"; }
+  .documents-table td:nth-child(4)::before { content: "Получател"; }
+  .documents-table td:nth-child(5)::before { content: "Сума"; }
+  .documents-table td:nth-child(6)::before { content: "ДДС"; }
+  .documents-table td:nth-child(7)::before { content: "Статус"; }
+  .documents-table td:nth-child(8)::before { content: "Категория"; }
+
+  .empty-cell {
+    display: block;
+    text-align: left;
+  }
+}
+
+@media (max-width: 420px) {
+  .documents-table td {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  pre {
+    font-size: 12px;
   }
 }
