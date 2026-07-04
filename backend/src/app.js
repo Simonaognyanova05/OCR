@@ -10,7 +10,18 @@ const { errorMiddleware } = require("./middleware/errorMiddleware");
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || config.corsOrigins.length === 0 || config.corsOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("CORS origin is not allowed"));
+    },
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 app.use("/uploads", express.static(path.resolve(config.uploadDir)));
 

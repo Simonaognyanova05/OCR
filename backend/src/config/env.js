@@ -7,6 +7,13 @@ const projectRoot = path.resolve(backendDir, "..");
 dotenv.config({ path: path.join(backendDir, ".env") });
 dotenv.config({ path: path.join(projectRoot, ".env"), override: false });
 
+function readCsvEnv(value) {
+  return (value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 const config = {
   apiKey: process.env.OPENAI_API_KEY,
   model: process.env.OPENAI_MODEL || "gpt-5.4-mini",
@@ -14,6 +21,7 @@ const config = {
   mongodbUri: process.env.MONGODB_URI,
   authSecret: process.env.AUTH_SECRET || "dev-only-change-this-auth-secret",
   port: Number(process.env.PORT || 3000),
+  corsOrigins: readCsvEnv(process.env.CORS_ORIGINS),
   uploadDir: path.resolve(backendDir, process.env.UPLOAD_DIR || "uploads"),
   outputDir: path.resolve(backendDir, process.env.OUTPUT_DIR || "outputs"),
   pdfFontRegularPath: process.env.PDF_FONT_REGULAR_PATH,
@@ -25,13 +33,13 @@ const config = {
 
 function assertConfig() {
   if (!config.apiKey) {
-    throw new Error("Липсва OPENAI_API_KEY. Копирай backend/.env.example към backend/.env и добави API ключ.");
+    throw new Error("Липсва OPENAI_API_KEY. Добави API ключ в backend/.env или в Environment Variables.");
   }
 }
 
 function assertDatabaseConfig() {
   if (!config.mongodbUri) {
-    throw new Error("Липсва MONGODB_URI. Добави MongoDB connection string в backend/.env.");
+    throw new Error("Липсва MONGODB_URI. Добави MongoDB connection string в backend/.env или в Environment Variables.");
   }
 }
 
