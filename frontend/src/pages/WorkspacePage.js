@@ -20,6 +20,7 @@ function WorkspacePage({
   onUploadOnly,
   result,
   saving,
+  usage,
 }) {
   return (
     <>
@@ -46,6 +47,7 @@ function WorkspacePage({
           onSubmit={onSubmit}
           onUploadOnly={onUploadOnly}
           result={result}
+          usage={usage}
         />
         <ReviewPanel
           draft={draft}
@@ -61,4 +63,3 @@ function WorkspacePage({
 }
 
 export default WorkspacePage;
-

@@ -18,6 +18,8 @@ function BreakdownList({ emptyText, items, currency }) {
 }
 
 function DashboardPanel({ dashboard, onRefresh }) {
+  const usage = dashboard?.usage;
+
   return (
     <section className="dashboard-panel">
       <div className="panel-heading">
@@ -40,10 +42,22 @@ function DashboardPanel({ dashboard, onRefresh }) {
           <strong>{formatMoney(dashboard?.totalVat, dashboard?.currency)}</strong>
         </div>
         <div>
-          <span>Брой документи</span>
+          <span>Брой одобрени документи</span>
           <strong>{dashboard?.documentCount || 0}</strong>
         </div>
       </div>
+
+      {usage && (
+        <div className={usage.limitReached ? 'usage-box limit-reached' : 'usage-box'}>
+          <span>Месечен OCR лимит</span>
+          <strong>{usage.usedDocuments} / {usage.documentLimit}</strong>
+          <p>
+            {usage.limitReached
+              ? 'Лимитът е достигнат. Качването на нови документи е блокирано.'
+              : `Остават ${usage.remainingDocuments} документа по план ${usage.plan}.`}
+          </p>
+        </div>
+      )}
 
       <div className="dashboard-breakdowns">
         <section>
@@ -69,4 +83,3 @@ function DashboardPanel({ dashboard, onRefresh }) {
 }
 
 export default DashboardPanel;
-

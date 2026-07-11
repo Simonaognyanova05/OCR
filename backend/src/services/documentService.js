@@ -142,12 +142,16 @@ function toSortedBreakdown(map, limit) {
 
 async function getDashboard(authContext) {
   const monthRange = getCurrentMonthRange();
-  const documents = await getCompanyDashboardDocuments(authContext.company._id, monthRange);
+  const [documents, usedDocuments] = await Promise.all([
+    getCompanyDashboardDocuments(authContext.company._id, monthRange),
+    countCompanyDocumentsThisMonth(authContext.company._id)
+  ]);
   const suppliers = new Map();
   const categories = new Map();
   const currencies = new Set();
   let totalExpenses = 0;
   let totalVat = 0;
+  const documentLimit = authContext.company.documentLimit;
 
   for (const document of documents) {
     const data = document.data || {};
@@ -169,6 +173,13 @@ async function getDashboard(authContext) {
     totalExpenses,
     totalVat,
     documentCount: documents.length,
+    usage: {
+      usedDocuments,
+      documentLimit,
+      remainingDocuments: Math.max(documentLimit - usedDocuments, 0),
+      limitReached: usedDocuments >= documentLimit,
+      plan: authContext.company.plan
+    },
     topSuppliers: toSortedBreakdown(suppliers, 5),
     expensesByCategory: toSortedBreakdown(categories)
   };

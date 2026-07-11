@@ -558,6 +558,38 @@ body {
   background: #f8fbff;
 }
 
+.usage-box {
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px;
+  color: #1e3a8a;
+  background: #eff6ff;
+}
+
+.usage-box.limit-reached {
+  border-color: #f4c7c3;
+  color: #912018;
+  background: #fff4f2;
+}
+
+.usage-box span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.usage-box strong {
+  display: block;
+  font-size: 22px;
+}
+
+.usage-box p {
+  margin: 6px 0 0;
+}
+
 .drop-hint {
   margin: -4px 0 0;
   color: var(--muted);

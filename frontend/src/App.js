@@ -131,6 +131,11 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (dashboard?.usage?.limitReached) {
+      setError('Достигнат е месечният лимит за OCR документи. Заяви по-висок план, за да качваш още.');
+      return;
+    }
+
     if (!file) {
       setError('Избери PDF, JPG или PNG документ.');
       return;
@@ -156,6 +161,11 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
   }
 
   async function handleUploadOnly() {
+    if (dashboard?.usage?.limitReached) {
+      setError('Достигнат е месечният лимит за документи. Заяви по-висок план, за да качваш още.');
+      return;
+    }
+
     if (!file) {
       setError('Избери PDF, JPG или PNG документ.');
       return;
@@ -312,6 +322,7 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
               onUploadOnly={handleUploadOnly}
               result={result}
               saving={saving}
+              usage={dashboard?.usage}
             />
           )}
         />
