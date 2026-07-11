@@ -8,6 +8,10 @@ const navigationItems = [
 ];
 
 function AppShell({ auth, health, onLogout }) {
+  const items = auth.user?.is_admin
+    ? [...navigationItems, { to: '/admin', label: 'Админ' }]
+    : navigationItems;
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -20,7 +24,7 @@ function AppShell({ auth, health, onLogout }) {
         </div>
 
         <nav className="main-nav">
-          {navigationItems.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -45,7 +49,7 @@ function AppShell({ auth, health, onLogout }) {
             </div>
             <div className="user-chip">
               <strong>{auth.user?.email}</strong>
-              <span>{auth.membership?.role}</span>
+              <span>{auth.user?.is_admin ? `${auth.membership?.role} · admin` : auth.membership?.role}</span>
             </div>
             <button type="button" className="secondary-button" onClick={onLogout}>
               Изход
@@ -62,4 +66,3 @@ function AppShell({ auth, health, onLogout }) {
 }
 
 export default AppShell;
-

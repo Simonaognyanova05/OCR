@@ -31,6 +31,15 @@ const subscriptionRequestSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: null
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+    reviewedAt: {
+      type: Date,
+      default: null
     }
   },
   {

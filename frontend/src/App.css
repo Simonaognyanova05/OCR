@@ -507,6 +507,16 @@ body {
   background: #f8fbff;
 }
 
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.table-actions button {
+  padding: 9px 12px;
+}
+
 .empty-cell {
   color: var(--muted);
   text-align: center;

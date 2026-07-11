@@ -7,6 +7,7 @@ import { useAuth } from './hooks/useAuth';
 import { useDashboard } from './hooks/useDashboard';
 import { initialDocumentFilters, useDocuments } from './hooks/useDocuments';
 import { useHealth } from './hooks/useHealth';
+import AdminPage from './pages/AdminPage';
 import CompanyPage from './pages/CompanyPage';
 import DashboardPage from './pages/DashboardPage';
 import DocumentsPage from './pages/DocumentsPage';
@@ -340,6 +341,10 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
               setRequestedPlan={setRequestedPlan}
             />
           )}
+        />
+        <Route
+          path="admin"
+          element={auth.user?.is_admin ? <AdminPage auth={auth} /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

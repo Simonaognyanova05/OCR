@@ -1,4 +1,5 @@
 const { getAuthContext } = require("../services/authService");
+const { isSystemAdmin } = require("../services/authService");
 const { HttpError } = require("../utils/httpError");
 const { verifyToken } = require("../utils/auth");
 
@@ -34,7 +35,17 @@ function requireRole(allowedRoles) {
   };
 }
 
+function requireAdmin(req, _res, next) {
+  if (!req.auth || !isSystemAdmin(req.auth.user)) {
+    next(new HttpError(403, "Нямаш админ права за това действие."));
+    return;
+  }
+
+  next();
+}
+
 module.exports = {
   requireAuth,
+  requireAdmin,
   requireRole
 };
