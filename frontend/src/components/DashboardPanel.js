@@ -48,14 +48,19 @@ function DashboardPanel({ dashboard, onRefresh }) {
       </div>
 
       {usage && (
-        <div className={usage.limitReached ? 'usage-box limit-reached' : 'usage-box'}>
-          <span>Месечен OCR лимит</span>
-          <strong>{usage.usedDocuments} / {usage.documentLimit}</strong>
-          <p>
-            {usage.limitReached
-              ? 'Лимитът е достигнат. Качването на нови документи е блокирано.'
-              : `Остават ${usage.remainingDocuments} документа по план ${usage.plan}.`}
-          </p>
+        <div className={usage.limitReached ? 'usage-card limit-reached' : 'usage-card'}>
+          <div>
+            <span>Месечен OCR лимит</span>
+            <strong>{usage.usedDocuments} / {usage.documentLimit}</strong>
+            <p>
+              {usage.limitReached
+                ? 'Лимитът е достигнат. Качването на нови документи е блокирано.'
+                : `Остават ${usage.remainingDocuments} документа по план ${usage.plan}.`}
+            </p>
+          </div>
+          <div className="usage-progress" aria-hidden="true">
+            <i style={{ width: `${Math.min((usage.usedDocuments / usage.documentLimit) * 100, 100)}%` }} />
+          </div>
         </div>
       )}
 
