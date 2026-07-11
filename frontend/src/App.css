@@ -342,6 +342,49 @@ body {
   gap: 18px;
 }
 
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.plan-card {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-height: 170px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: linear-gradient(180deg, #fff, var(--panel-soft));
+  cursor: pointer;
+}
+
+.plan-card.selected {
+  border-color: var(--primary);
+  box-shadow: 0 12px 24px rgba(29, 78, 216, 0.14);
+}
+
+.plan-card input {
+  width: fit-content;
+}
+
+.plan-card strong {
+  font-size: 18px;
+}
+
+.plan-card span {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.plan-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .dashboard-breakdowns h3 {
   margin: 0 0 10px;
 }
@@ -759,6 +802,7 @@ pre {
   .mvp-flow,
   .dashboard-metrics,
   .dashboard-breakdowns,
+  .plans-grid,
   .edit-form,
   .filters-grid,
   .review-fields {

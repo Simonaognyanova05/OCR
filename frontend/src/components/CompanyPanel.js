@@ -1,46 +1,105 @@
-function CompanyPanel({ auth, companyDraft, onSave, onUpdate, saving }) {
+const fallbackPlans = [
+  { id: 'free', name: 'Free', documentLimit: 50, description: 'За тест и малък обем документи.' },
+  { id: 'starter', name: 'Starter', documentLimit: 200, description: 'За малки фирми с регулярни документи.' },
+  { id: 'pro', name: 'Pro', documentLimit: 1000, description: 'За активни фирми и счетоводни екипи.' },
+  { id: 'business', name: 'Business', documentLimit: 5000, description: 'За счетоводни къщи и голям обем документи.' },
+];
+
+function CompanyPanel({
+  auth,
+  companyDraft,
+  onRequestSubscription,
+  onSave,
+  onUpdate,
+  requestedPlan,
+  saving,
+  setRequestedPlan,
+}) {
+  const plans = auth.plans || fallbackPlans;
+  const currentPlan = companyDraft?.plan || auth.company?.plan || 'free';
+  const pendingRequest = auth.pending_subscription_request;
+  const selectedPlan = requestedPlan || currentPlan;
+
   return (
-    <section className="company-panel">
-      <h2>Фирмен профил</h2>
-      <div className="edit-form">
-        <label className="field">
-          <span>Име на фирма</span>
-          <input value={companyDraft?.name || ''} onChange={(event) => onUpdate('name', event.target.value)} />
-        </label>
-        <label className="field">
-          <span>ЕИК</span>
-          <input value={companyDraft?.tax_id || ''} onChange={(event) => onUpdate('tax_id', event.target.value)} />
-        </label>
-        <label className="field">
-          <span>ДДС номер</span>
-          <input value={companyDraft?.vat_id || ''} onChange={(event) => onUpdate('vat_id', event.target.value)} />
-        </label>
-        <label className="field">
-          <span>Адрес</span>
-          <input value={companyDraft?.address || ''} onChange={(event) => onUpdate('address', event.target.value)} />
-        </label>
-        <label className="field">
-          <span>План</span>
-          <select value={companyDraft?.plan || 'free'} onChange={(event) => onUpdate('plan', event.target.value)}>
-            <option value="free">Free · 50 документа</option>
-            <option value="starter">Starter · 200 документа</option>
-            <option value="pro">Pro · 1000 документа</option>
-            <option value="business">Business · 5000 документа</option>
-          </select>
-        </label>
-        <label className="field">
-          <span>Месечен лимит</span>
-          <input disabled value={companyDraft?.document_limit || ''} />
-        </label>
-      </div>
-      <div className="actions">
-        <button type="button" onClick={onSave} disabled={saving || auth.membership?.role !== 'owner'}>
-          Запази фирмения профил
-        </button>
-      </div>
-    </section>
+    <>
+      <section className="company-panel">
+        <h2>Фирмен профил</h2>
+        <div className="edit-form">
+          <label className="field">
+            <span>Име на фирма</span>
+            <input value={companyDraft?.name || ''} onChange={(event) => onUpdate('name', event.target.value)} />
+          </label>
+          <label className="field">
+            <span>ЕИК</span>
+            <input value={companyDraft?.tax_id || ''} onChange={(event) => onUpdate('tax_id', event.target.value)} />
+          </label>
+          <label className="field">
+            <span>ДДС номер</span>
+            <input value={companyDraft?.vat_id || ''} onChange={(event) => onUpdate('vat_id', event.target.value)} />
+          </label>
+          <label className="field">
+            <span>Адрес</span>
+            <input value={companyDraft?.address || ''} onChange={(event) => onUpdate('address', event.target.value)} />
+          </label>
+          <label className="field">
+            <span>Активен план</span>
+            <input disabled value={currentPlan} />
+          </label>
+          <label className="field">
+            <span>Месечен лимит</span>
+            <input disabled value={companyDraft?.document_limit || ''} />
+          </label>
+        </div>
+        <div className="actions">
+          <button type="button" onClick={onSave} disabled={saving || auth.membership?.role !== 'owner'}>
+            Запази фирмения профил
+          </button>
+        </div>
+      </section>
+
+      <section className="company-panel">
+        <div className="panel-heading">
+          <div>
+            <h2>Абонамент</h2>
+            <p className="panel-subtitle">Избери план и изпрати заявка. Екипът ще активира абонамента след потвърждение.</p>
+          </div>
+        </div>
+
+        {pendingRequest && (
+          <div className="warning-box">
+            Има чакаща заявка за план <strong>{pendingRequest.requested_plan}</strong> със статус <strong>{pendingRequest.status}</strong>.
+          </div>
+        )}
+
+        <div className="plans-grid">
+          {plans.map((plan) => (
+            <label key={plan.id} className={`plan-card ${selectedPlan === plan.id ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="subscription-plan"
+                checked={selectedPlan === plan.id}
+                onChange={() => setRequestedPlan(plan.id)}
+                disabled={saving || Boolean(pendingRequest)}
+              />
+              <strong>{plan.name}</strong>
+              <span>{plan.documentLimit} документа / месец</span>
+              <p>{plan.description}</p>
+            </label>
+          ))}
+        </div>
+
+        <div className="actions">
+          <button
+            type="button"
+            onClick={() => onRequestSubscription(selectedPlan)}
+            disabled={saving || auth.membership?.role !== 'owner' || selectedPlan === currentPlan || Boolean(pendingRequest)}
+          >
+            Заяви абонамент
+          </button>
+        </div>
+      </section>
+    </>
   );
 }
 
 export default CompanyPanel;
-
