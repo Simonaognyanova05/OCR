@@ -1,9 +1,48 @@
+import { BILLING_INFO, buildPaymentReason } from '../config/billing';
+
 const fallbackPlans = [
   { id: 'free', name: 'Free', documentLimit: 50, description: 'За тест и малък обем документи.' },
   { id: 'starter', name: 'Starter', documentLimit: 200, description: 'За малки фирми с регулярни документи.' },
   { id: 'pro', name: 'Pro', documentLimit: 1000, description: 'За активни фирми и счетоводни екипи.' },
   { id: 'business', name: 'Business', documentLimit: 5000, description: 'За счетоводни къщи и голям обем документи.' },
 ];
+
+function PaymentInstructions({ companyName, plan }) {
+  const reason = buildPaymentReason(companyName, plan);
+
+  return (
+    <div className="payment-box">
+      <h3>Плащане по банков път</h3>
+      <p>
+        За да бъде активиран избраният план, направи банков превод по сметката по-долу.
+        След като плащането бъде потвърдено, екипът ще активира абонамента.
+      </p>
+      <div className="payment-grid">
+        <div>
+          <span>Получател</span>
+          <strong>{BILLING_INFO.beneficiary}</strong>
+        </div>
+        <div>
+          <span>IBAN</span>
+          <strong>{BILLING_INFO.iban}</strong>
+        </div>
+        {BILLING_INFO.bank && (
+          <div>
+            <span>Банка</span>
+            <strong>{BILLING_INFO.bank}</strong>
+          </div>
+        )}
+        <div>
+          <span>Основание</span>
+          <strong>{reason}</strong>
+        </div>
+      </div>
+      <p className="payment-note">
+        В основанието посочи името на фирмата и заявения план, за да обработим плащането по-бързо.
+      </p>
+    </div>
+  );
+}
 
 function CompanyPanel({
   auth,
@@ -19,6 +58,7 @@ function CompanyPanel({
   const currentPlan = companyDraft?.plan || auth.company?.plan || 'free';
   const pendingRequest = auth.pending_subscription_request;
   const selectedPlan = requestedPlan || currentPlan;
+  const paymentPlan = pendingRequest?.requested_plan || selectedPlan;
 
   return (
     <>
@@ -61,7 +101,9 @@ function CompanyPanel({
         <div className="panel-heading">
           <div>
             <h2>Абонамент</h2>
-            <p className="panel-subtitle">Избери план и изпрати заявка. Екипът ще активира абонамента след потвърждение.</p>
+            <p className="panel-subtitle">
+              Избери план и изпрати заявка. След това заплати по банков път, за да бъде активиран абонаментът.
+            </p>
           </div>
         </div>
 
@@ -97,6 +139,10 @@ function CompanyPanel({
             Заяви абонамент
           </button>
         </div>
+
+        {(pendingRequest || selectedPlan !== currentPlan) && (
+          <PaymentInstructions companyName={companyDraft?.name || auth.company?.name} plan={paymentPlan} />
+        )}
       </section>
     </>
   );

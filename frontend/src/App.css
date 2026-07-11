@@ -385,6 +385,56 @@ body {
   font-size: 14px;
 }
 
+.payment-box {
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 16px;
+  background: #eff6ff;
+}
+
+.payment-box h3 {
+  margin: 0 0 8px;
+}
+
+.payment-box p {
+  margin: 0 0 14px;
+  color: #1e3a8a;
+}
+
+.payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.payment-grid div {
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.payment-grid span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.payment-grid strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.payment-box .payment-note {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .dashboard-breakdowns h3 {
   margin: 0 0 10px;
 }
@@ -803,6 +853,7 @@ pre {
   .dashboard-metrics,
   .dashboard-breakdowns,
   .plans-grid,
+  .payment-grid,
   .edit-form,
   .filters-grid,
   .review-fields {
