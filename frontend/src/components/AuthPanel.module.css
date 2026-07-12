@@ -1,0 +1,36 @@
+﻿.moduleRoot {}
+
+:global(.auth-tabs),
+:global(.account-bar) {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+:global(.auth-tabs) {
+  justify-content: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+:global(.auth-tabs) button {
+  flex: 1 1 140px;
+}
+
+:global(.auth-panel) :global(.edit-form) {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+:global(.auth-panel) button[type='submit'] {
+  width: 100%;
+}
+
+:global(.account-bar) span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}

@@ -1,3 +1,5 @@
+import styles from './UploadPanel.module.css';
+
 function UploadPanel({
   dragActive,
   error,
@@ -19,7 +21,7 @@ function UploadPanel({
 
   return (
     <form
-      className={dragActive ? 'upload-panel drag-active' : 'upload-panel'}
+      className={`${styles.moduleRoot} upload-panel${dragActive ? ' drag-active' : ''}`}
       onSubmit={onSubmit}
       onDragOver={limitReached ? undefined : onDragOver}
       onDragLeave={onDragLeave}

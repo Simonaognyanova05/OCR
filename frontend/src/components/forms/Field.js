@@ -1,10 +1,11 @@
 import { getFieldValue, parseValue } from '../../utils/form';
+import styles from './Field.module.css';
 
 function Field({ label, path, draft, onChange, type = 'text' }) {
   const value = getFieldValue(draft, path);
 
   return (
-    <label className="field">
+    <label className={`${styles.moduleRoot} field`}>
       <span>{label}</span>
       <input
         type={type === 'number' ? 'number' : type}
@@ -16,4 +17,3 @@ function Field({ label, path, draft, onChange, type = 'text' }) {
 }
 
 export default Field;
-

@@ -1,0 +1,81 @@
+﻿.moduleRoot {}
+
+:global(.workspace) {
+  display: grid;
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  padding-bottom: 4px;
+}
+
+:global(.mvp-flow) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+:global(.mvp-flow) span {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  font-weight: 800;
+}
+
+:global(.mvp-flow) :global(.muted) {
+  color: var(--muted);
+  background: var(--panel-soft);
+}
+
+:global(.upload-panel),
+:global(.result-panel),
+:global(.auth-panel),
+:global(.company-panel),
+:global(.account-bar),
+:global(.dashboard-panel),
+:global(.documents-panel) {
+  border: 1px solid rgba(220, 228, 239, 0.95);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+:global(.auth-panel),
+:global(.company-panel),
+:global(.account-bar),
+:global(.dashboard-panel),
+:global(.documents-panel) {
+  margin-bottom: 20px;
+}
+
+:global(.panel-heading) {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+:global(.panel-heading) h2 {
+  margin: 0;
+}
+
+:global(.panel-subtitle) {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+:global(.panel-tools) {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+:global(.compact-field) {
+  min-width: min(180px, 100%);
+}

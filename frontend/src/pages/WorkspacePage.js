@@ -1,5 +1,6 @@
 import ReviewPanel from '../components/ReviewPanel';
 import UploadPanel from '../components/UploadPanel';
+import styles from './WorkspacePage.module.css';
 
 function WorkspacePage({
   dragActive,
@@ -32,7 +33,7 @@ function WorkspacePage({
         </div>
       </section>
 
-      <section className="workspace">
+      <section className={`${styles.moduleRoot} workspace`}>
         <UploadPanel
           dragActive={dragActive}
           error={error}

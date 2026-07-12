@@ -1,4 +1,5 @@
 import { BILLING_INFO, buildPaymentReason } from '../config/billing';
+import styles from './CompanyPanel.module.css';
 
 const fallbackPlans = [
   { id: 'free', name: 'Free', documentLimit: 50, description: 'За тест и малък обем документи.' },
@@ -62,7 +63,7 @@ function CompanyPanel({
 
   return (
     <>
-      <section className="company-panel">
+      <section className={`${styles.moduleRoot} company-panel`}>
         <h2>Фирмен профил</h2>
         <div className="edit-form">
           <label className="field">

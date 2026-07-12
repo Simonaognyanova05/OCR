@@ -1,4 +1,5 @@
 import { formatMoney } from '../utils/format';
+import styles from './DashboardPanel.module.css';
 
 function BreakdownList({ emptyText, items, currency }) {
   if (items.length === 0) {
@@ -21,7 +22,7 @@ function DashboardPanel({ dashboard, onRefresh }) {
   const usage = dashboard?.usage;
 
   return (
-    <section className="dashboard-panel">
+    <section className={`${styles.moduleRoot} dashboard-panel`}>
       <div className="panel-heading">
         <div>
           <h2>Табло</h2>

@@ -1,5 +1,6 @@
 import { documentTypeLabels } from '../constants/labels';
 import { initialDocumentFilters } from '../hooks/useDocuments';
+import styles from './DocumentsPanel.module.css';
 
 function DocumentsPanel({
   documentFilters,
@@ -17,7 +18,7 @@ function DocumentsPanel({
   }
 
   return (
-    <section className="documents-panel">
+    <section className={`${styles.moduleRoot} documents-panel`}>
       <div className="panel-heading">
         <h2>Списък с документи</h2>
         <div className="panel-tools">
@@ -90,4 +91,3 @@ function DocumentsPanel({
 }
 
 export default DocumentsPanel;
-

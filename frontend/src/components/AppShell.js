@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import styles from './AppShell.module.css';
+import responsiveStyles from './Responsive.module.css';
 
 const navigationItems = [
   { to: '/', label: 'Табло' },
@@ -13,7 +15,7 @@ function AppShell({ auth, health, onLogout }) {
     : navigationItems;
 
   return (
-    <div className="app-shell">
+    <div className={`${styles.moduleRoot} ${responsiveStyles.moduleRoot} app-shell`}>
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark">O</div>

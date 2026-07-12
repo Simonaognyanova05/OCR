@@ -1,0 +1,167 @@
+﻿.moduleRoot {}
+
+label {
+  font-weight: 800;
+}
+
+input[type='file'] {
+  width: 100%;
+  max-width: 100%;
+  padding: 12px;
+  border: 1px dashed #b7c0cf;
+  border-radius: 8px;
+  background: #f8fafc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:global(.file-meta) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+:global(.file-meta) strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 10px 22px rgba(29, 78, 216, 0.18);
+  cursor: pointer;
+  font-weight: 800;
+  max-width: 100%;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+:global(.secondary-button) {
+  color: var(--text);
+  background: #edf2f7;
+  box-shadow: none;
+}
+
+:global(.error) {
+  margin: 0;
+  color: var(--danger);
+}
+
+:global(.notice) {
+  margin: 0;
+  color: var(--success);
+}
+
+:global(.empty) {
+  color: var(--muted);
+}
+
+:global(.summary-grid) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+:global(.summary-grid) strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+:global(.review-box) {
+  margin-bottom: 16px;
+  border: 1px solid #f4c7c3;
+  border-radius: 8px;
+  padding: 12px;
+  color: #912018;
+  background: #fff4f2;
+}
+
+:global(.warning-box) {
+  margin-bottom: 16px;
+  border: 1px solid #f6d58b;
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--warning);
+  background: #fff8e7;
+}
+
+:global(.edit-form) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+:global(.field) {
+  display: grid;
+  gap: 6px;
+}
+
+:global(.field) span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+:global(.field) input,
+:global(.field) select {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+:global(.field) input:focus,
+:global(.field) select:focus {
+  outline: 2px solid rgba(29, 78, 216, 0.16);
+  border-color: var(--primary);
+}
+
+:global(.actions) {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+:global(.fields-panel) :global(.actions) button {
+  min-width: min(180px, 100%);
+}
+
+details {
+  margin-top: 12px;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+pre {
+  max-height: 620px;
+  overflow: auto;
+  padding: 16px;
+  border-radius: 8px;
+  color: #dbe7ff;
+  background: #111827;
+  line-height: 1.5;
+}
