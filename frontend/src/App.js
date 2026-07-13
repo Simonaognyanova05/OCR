@@ -255,6 +255,11 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
       return;
     }
 
+    if (result.status !== 'approved' && result.status !== 'exported') {
+      setError('Документът трябва да бъде одобрен преди експорт.');
+      return;
+    }
+
     try {
       await downloadDocumentExport(result.id, type, auth.token);
       refreshBusinessData();
@@ -323,6 +328,7 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
               onUploadOnly={handleUploadOnly}
               result={result}
               saving={saving}
+              token={auth.token}
               usage={dashboard?.usage}
             />
           )}

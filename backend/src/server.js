@@ -1,9 +1,10 @@
 const app = require("./app");
-const { config } = require("./config/env");
+const { assertRuntimeConfig, config } = require("./config/env");
 const { connectDatabase } = require("./config/db");
 const { ensureStorage } = require("./services/storageService");
 
 async function startServer() {
+  assertRuntimeConfig();
   await connectDatabase();
   await ensureStorage();
 

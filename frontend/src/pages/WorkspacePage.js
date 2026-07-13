@@ -21,6 +21,7 @@ function WorkspacePage({
   onUploadOnly,
   result,
   saving,
+  token,
   usage,
 }) {
   return (
@@ -57,6 +58,7 @@ function WorkspacePage({
           onUpdateDraft={onUpdateDraft}
           result={result}
           saving={saving}
+          token={token}
         />
       </section>
     </>

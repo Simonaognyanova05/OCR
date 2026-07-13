@@ -24,6 +24,14 @@ const boldFontCandidates = [
   "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 ].filter(Boolean);
 
+const exportableStatuses = new Set(["approved", "exported"]);
+
+function assertDocumentExportable(document) {
+  if (!exportableStatuses.has(document.status)) {
+    throw new HttpError(409, "Ð”Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚ÑŠÑ‚ Ñ‚Ñ€ÑÐ±Ð²Ð° Ð´Ð° Ð±ÑŠÐ´Ðµ Ð¾Ð´Ð¾Ð±Ñ€ÐµÐ½ Ð¿Ñ€ÐµÐ´Ð¸ ÐµÐºÑÐ¿Ð¾Ñ€Ñ‚.");
+  }
+}
+
 const documentTypeLabels = {
   invoice: "Фактура",
   receipt: "Касова бележка",
@@ -438,6 +446,7 @@ function generateMonthlyPdfReportBuffer(report) {
 
 async function generateExcelExport(documentId, companyId) {
   const document = await findDocumentById(documentId, companyId);
+  assertDocumentExportable(document);
   const workbook = new ExcelJS.Workbook();
   const documentsSheet = workbook.addWorksheet("Документи");
 
@@ -535,6 +544,7 @@ function generatePdfBuffer(document) {
 
 async function generatePdfExport(documentId, companyId) {
   const document = await findDocumentById(documentId, companyId);
+  assertDocumentExportable(document);
   const buffer = await generatePdfBuffer(document);
   await markDocumentExported(documentId, "pdf", companyId);
 

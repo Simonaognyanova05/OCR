@@ -12,6 +12,7 @@ function ReviewPanel({
   onUpdateDraft,
   result,
   saving,
+  token,
 }) {
   const extracted = draft;
   const warnings = getImportantWarnings(extracted);
@@ -23,7 +24,7 @@ function ReviewPanel({
         <div className="review-layout">
           <section className="preview-panel">
             <h3>Оригинален документ</h3>
-            <DocumentPreview result={result} />
+            <DocumentPreview result={result} token={token} />
           </section>
 
           <section className="fields-panel">

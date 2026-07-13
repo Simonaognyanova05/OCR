@@ -56,6 +56,28 @@ const documentSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    processingStartedAt: {
+      type: Date,
+      default: null
+    },
+    processingCompletedAt: {
+      type: Date,
+      default: null
+    },
+    failedAt: {
+      type: Date,
+      default: null
+    },
+    failureCode: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    failureMessage: {
+      type: String,
+      trim: true,
+      default: null
+    },
     reviewedAt: {
       type: Date,
       default: null

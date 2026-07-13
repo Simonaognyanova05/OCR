@@ -13,6 +13,14 @@ function base64UrlJson(value) {
   return base64UrlEncode(JSON.stringify(value));
 }
 
+function decodeBase64UrlJson(value) {
+  try {
+    return JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+  } catch (_error) {
+    return null;
+  }
+}
+
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("base64url");
   const hash = crypto.pbkdf2Sync(password, salt, iterations, keyLength, digest).toString("base64url");
@@ -41,11 +49,14 @@ function verifyPassword(password, storedHash) {
   return crypto.timingSafeEqual(calculatedBuffer, hashBuffer);
 }
 
-function signToken(payload) {
+function signToken(payload, options = {}) {
+  const issuedAt = options.issuedAt || Math.floor(Date.now() / 1000);
+  const expiresInSeconds = options.expiresInSeconds || config.authTokenTtlSeconds;
   const header = base64UrlJson({ alg: "HS256", typ: "JWT" });
   const body = base64UrlJson({
     ...payload,
-    iat: Math.floor(Date.now() / 1000)
+    iat: issuedAt,
+    exp: issuedAt + expiresInSeconds
   });
   const signature = crypto
     .createHmac("sha256", config.authSecret)
@@ -55,10 +66,15 @@ function signToken(payload) {
   return `${header}.${body}.${signature}`;
 }
 
-function verifyToken(token) {
+function verifyToken(token, options = {}) {
   const [header, body, signature] = String(token).split(".");
 
   if (!header || !body || !signature) {
+    return null;
+  }
+
+  const decodedHeader = decodeBase64UrlJson(header);
+  if (!decodedHeader || decodedHeader.alg !== "HS256" || decodedHeader.typ !== "JWT") {
     return null;
   }
 
@@ -78,7 +94,14 @@ function verifyToken(token) {
     return null;
   }
 
-  return JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+  const payload = decodeBase64UrlJson(body);
+  const now = options.now || Math.floor(Date.now() / 1000);
+
+  if (!payload || !Number.isFinite(payload.exp) || payload.exp <= now) {
+    return null;
+  }
+
+  return payload;
 }
 
 module.exports = {

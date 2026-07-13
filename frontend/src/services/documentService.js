@@ -1,5 +1,5 @@
 import { buildQuery } from '../utils/form';
-import { getJson, sendForm, sendJson } from './apiClient';
+import { downloadBlob, getJson, sendForm, sendJson } from './apiClient';
 
 export function listDocuments(filters, token) {
   const query = buildQuery(filters);
@@ -8,6 +8,10 @@ export function listDocuments(filters, token) {
 
 export function getDocument(documentId, token) {
   return getJson(`/api/documents/${documentId}`, token);
+}
+
+export function getDocumentFile(documentId, token) {
+  return downloadBlob(`/api/documents/${documentId}/file`, token, 'Файлът не може да бъде зареден.');
 }
 
 export function uploadDocument(file, token) {
@@ -29,4 +33,3 @@ export function saveDocumentReview(documentId, data, token) {
 export function approveDocument(documentId, data, token) {
   return sendJson(`/api/documents/${documentId}/approve`, 'POST', { data }, token);
 }
-

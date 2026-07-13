@@ -3,6 +3,7 @@ const {
   approveDocumentHandler,
   extractDocumentHandler,
   getDashboardHandler,
+  getDocumentFileHandler,
   getDocumentHandler,
   listDocumentsHandler,
   saveReviewHandler,
@@ -23,6 +24,7 @@ router.post("/documents/extract", requireAuth, uploadDocument.single("document")
 router.get("/dashboard", requireAuth, getDashboardHandler);
 router.get("/documents", requireAuth, listDocumentsHandler);
 router.get("/reports/monthly/pdf", requireAuth, requireRole(["owner", "accountant"]), exportMonthlyPdfReportHandler);
+router.get("/documents/:id/file", requireAuth, getDocumentFileHandler);
 router.put("/documents/:id/review", requireAuth, requireRole(["owner", "accountant", "employee"]), saveReviewHandler);
 router.post("/documents/:id/approve", requireAuth, requireRole(["owner", "accountant", "employee"]), approveDocumentHandler);
 router.get("/documents/:id/export/excel", requireAuth, requireRole(["owner", "accountant"]), exportExcelHandler);

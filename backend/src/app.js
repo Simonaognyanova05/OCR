@@ -1,5 +1,4 @@
 const express = require("express");
-const path = require("node:path");
 const cors = require("cors");
 const { config } = require("./config/env");
 const healthRoutes = require("./routes/healthRoutes");
@@ -24,7 +23,6 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
-app.use("/uploads", express.static(path.resolve(config.uploadDir)));
 
 app.use(healthRoutes);
 app.use("/api", authRoutes);
