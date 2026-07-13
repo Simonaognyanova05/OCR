@@ -11,3 +11,4 @@ backend/.env
 frontend/node_modules/
 frontend/build/
 frontend/.env.local
+.ai
