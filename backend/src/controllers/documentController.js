@@ -3,6 +3,7 @@ const {
   extractDocument,
   getDashboard,
   getDocument,
+  getDocumentFile,
   listDocuments,
   saveReviewedDocument,
   uploadDocumentOnly
@@ -30,6 +31,23 @@ async function getDocumentHandler(req, res, next) {
   try {
     const result = await getDocument(req.params.id, req.auth);
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getDocumentFileHandler(req, res, next) {
+  try {
+    const file = await getDocumentFile(req.params.id, req.auth);
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.type(file.mimeType);
+    res.sendFile(file.filePath, {
+      headers: {
+        "Content-Disposition": `inline; filename="${encodeURIComponent(file.filename)}"`
+      }
+    });
   } catch (error) {
     next(error);
   }
@@ -76,6 +94,7 @@ module.exports = {
   extractDocumentHandler,
   getDashboardHandler,
   getDocumentHandler,
+  getDocumentFileHandler,
   listDocumentsHandler,
   saveReviewHandler,
   uploadDocumentHandler

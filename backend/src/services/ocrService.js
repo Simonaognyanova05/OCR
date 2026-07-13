@@ -2,6 +2,7 @@ const OpenAI = require("openai");
 const { config, assertConfig } = require("../config/env");
 const { expenseDocumentSchema } = require("../models/expenseDocumentSchema");
 const { imageToDataUrl } = require("../utils/fileUtils");
+const { HttpError } = require("../utils/httpError");
 
 function normalizeResponse(response) {
   const text = response.output_text;
@@ -33,10 +34,16 @@ async function extractExpenseDocumentFromImages(imagePaths) {
     throw new Error("Няма изображения за OCR обработка.");
   }
 
-  const client = new OpenAI({ apiKey: config.apiKey });
+  const client = new OpenAI({
+    apiKey: config.apiKey,
+    timeout: config.ocrRequestTimeoutMs
+  });
   const imageInputs = await buildImageInputs(imagePaths);
 
-  const response = await client.responses.create({
+  let response;
+
+  try {
+    response = await client.responses.create({
     model: config.model,
     temperature: 0,
     input: [
@@ -87,7 +94,16 @@ async function extractExpenseDocumentFromImages(imagePaths) {
         schema: expenseDocumentSchema
       }
     }
-  });
+    });
+  } catch (error) {
+    if (error.name === "APIConnectionTimeoutError" || error.code === "ETIMEDOUT" || /timeout/i.test(error.message || "")) {
+      const timeoutError = new HttpError(504, "OCR обработката отне твърде дълго. Опитай отново или качи по-ясен документ.");
+      timeoutError.code = "ocr_request_timeout";
+      throw timeoutError;
+    }
+
+    throw error;
+  }
 
   return normalizeResponse(response);
 }

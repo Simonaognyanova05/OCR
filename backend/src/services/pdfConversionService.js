@@ -1,6 +1,7 @@
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 const { config } = require("../config/env");
+const { HttpError } = require("../utils/httpError");
 
 function runPythonPdfConverter(args) {
   return new Promise((resolve, reject) => {
@@ -9,6 +10,22 @@ function runPythonPdfConverter(args) {
     });
     let stdout = "";
     let stderr = "";
+    let settled = false;
+
+    const timeout = setTimeout(() => {
+      settled = true;
+      child.kill("SIGKILL");
+      const error = new HttpError(504, "PDF обработката отне твърде дълго. Опитай с по-малък или по-ясен файл.");
+      error.code = "pdf_conversion_timeout";
+      reject(error);
+    }, config.pdfConversionTimeoutMs);
+
+    function settle(callback) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      callback();
+    }
 
     child.stdout.on("data", (chunk) => {
       stdout += chunk.toString("utf8");
@@ -18,19 +35,23 @@ function runPythonPdfConverter(args) {
       stderr += chunk.toString("utf8");
     });
 
-    child.on("error", reject);
+    child.on("error", (error) => {
+      settle(() => reject(error));
+    });
 
     child.on("close", (code) => {
-      if (code !== 0) {
-        reject(new Error(stderr || `PDF conversion failed with exit code ${code}`));
-        return;
-      }
+      settle(() => {
+        if (code !== 0) {
+          reject(new Error(stderr || `PDF conversion failed with exit code ${code}`));
+          return;
+        }
 
-      try {
-        resolve(JSON.parse(stdout));
-      } catch (error) {
-        reject(new Error(`PDF conversion returned invalid JSON: ${error.message}`));
-      }
+        try {
+          resolve(JSON.parse(stdout));
+        } catch (error) {
+          reject(new Error(`PDF conversion returned invalid JSON: ${error.message}`));
+        }
+      });
     });
   });
 }
