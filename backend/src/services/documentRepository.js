@@ -10,12 +10,17 @@ function toApiDocument(document) {
     original_name: document.originalName,
     original_file_name: document.originalFileName || document.originalName,
     stored_file: document.storedFile,
-    file_url: document.fileUrl,
+    file_url: `/api/documents/${document._id.toString()}/file`,
     mime_type: document.mimeType,
     model: document.model,
     status: document.status,
     document_type: document.documentType,
     extracted_at: document.extractedAt?.toISOString(),
+    processing_started_at: document.processingStartedAt ? document.processingStartedAt.toISOString() : undefined,
+    processing_completed_at: document.processingCompletedAt ? document.processingCompletedAt.toISOString() : undefined,
+    failed_at: document.failedAt ? document.failedAt.toISOString() : undefined,
+    failure_code: document.failureCode || undefined,
+    failure_message: document.failureMessage || undefined,
     reviewed_at: document.reviewedAt ? document.reviewedAt.toISOString() : undefined,
     created_at: document.createdAt?.toISOString(),
     updated_at: document.updatedAt?.toISOString(),
@@ -189,6 +194,21 @@ async function findDocumentById(documentId, companyId) {
   return toApiDocument(document);
 }
 
+async function findDocumentFileById(documentId, companyId) {
+  const document = await Document.findOne({ _id: documentId, companyId })
+    .select("originalName originalFileName storedFile mimeType");
+
+  if (!document) {
+    throw new HttpError(404, "Ð”Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚ÑŠÑ‚ Ð½Ðµ Ðµ Ð½Ð°Ð¼ÐµÑ€ÐµÐ½.");
+  }
+
+  return {
+    originalName: document.originalFileName || document.originalName,
+    storedFile: document.storedFile,
+    mimeType: document.mimeType
+  };
+}
+
 async function updateDocumentStatus(documentId, companyId, status, extraUpdates = {}) {
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId },
@@ -213,6 +233,10 @@ async function updateExtractedDocument(documentId, companyId, payload) {
         model: payload.model,
         documentType: sanitizedData.documentType || null,
         extractedAt: payload.extracted_at,
+        processingCompletedAt: new Date(),
+        failedAt: null,
+        failureCode: null,
+        failureMessage: null,
         data: sanitizedData
       }
     },
@@ -276,7 +300,7 @@ async function approveReviewedDocument(documentId, reviewedData, companyId) {
 
 async function markDocumentExported(documentId, exportType, companyId) {
   const exportedAt = new Date();
-  const query = { _id: documentId };
+  const query = { _id: documentId, status: { $in: ["approved", "exported"] } };
   if (companyId) query.companyId = companyId;
 
   const document = await Document.findOneAndUpdate(
@@ -301,6 +325,7 @@ module.exports = {
   approveReviewedDocument,
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
+  findDocumentFileById,
   findDocumentById,
   findPotentialDuplicateDocument,
   getCompanyDashboardDocuments,

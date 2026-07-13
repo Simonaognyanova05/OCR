@@ -2,6 +2,7 @@ const {
   createCompanyMembership,
   getCompanyProfile,
   listCompanyMemberships,
+  requestSubscriptionPlan,
   updateCompanyProfile
 } = require("../services/companyService");
 
@@ -37,9 +38,18 @@ async function createCompanyMembershipHandler(req, res, next) {
   }
 }
 
+async function requestSubscriptionPlanHandler(req, res, next) {
+  try {
+    res.status(201).json(await requestSubscriptionPlan(req.auth, req.body || {}));
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createCompanyMembershipHandler,
   getCompanyProfileHandler,
   listCompanyMembershipsHandler,
+  requestSubscriptionPlanHandler,
   updateCompanyProfileHandler
 };

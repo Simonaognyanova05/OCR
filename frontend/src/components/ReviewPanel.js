@@ -3,6 +3,7 @@ import { getImportantWarnings } from '../utils/review';
 import DocumentPreview from './DocumentPreview';
 import Field from './forms/Field';
 import SelectField from './forms/SelectField';
+import styles from './ReviewPanel.module.css';
 
 function ReviewPanel({
   draft,
@@ -11,18 +12,19 @@ function ReviewPanel({
   onUpdateDraft,
   result,
   saving,
+  token,
 }) {
   const extracted = draft;
   const warnings = getImportantWarnings(extracted);
 
   return (
-    <section className="result-panel">
+    <section className={`${styles.moduleRoot} result-panel`}>
       <h2>Проверка от потребителя</h2>
       {extracted ? (
         <div className="review-layout">
           <section className="preview-panel">
             <h3>Оригинален документ</h3>
-            <DocumentPreview result={result} />
+            <DocumentPreview result={result} token={token} />
           </section>
 
           <section className="fields-panel">
@@ -80,4 +82,3 @@ function ReviewPanel({
 }
 
 export default ReviewPanel;
-

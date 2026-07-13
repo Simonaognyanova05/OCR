@@ -5,12 +5,18 @@ const Membership = require("../models/Membership");
 const { HttpError } = require("../utils/httpError");
 const { hashPassword, signToken, verifyPassword } = require("../utils/auth");
 const { getDocumentLimitForPlan } = require("./planService");
+const { config } = require("../config/env");
+
+function isSystemAdmin(user) {
+  return Boolean(user?.isAdmin || config.adminEmails.includes(String(user?.email || "").toLowerCase()));
+}
 
 function toApiUser(user) {
   return {
     id: user._id.toString(),
     email: user.email,
-    name: user.name
+    name: user.name,
+    is_admin: isSystemAdmin(user)
   };
 }
 
@@ -180,5 +186,6 @@ module.exports = {
   getAuthContext,
   loginUser,
   registerUser,
-  toApiCompany
+  toApiCompany,
+  isSystemAdmin
 };

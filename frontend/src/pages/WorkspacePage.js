@@ -1,5 +1,6 @@
 import ReviewPanel from '../components/ReviewPanel';
 import UploadPanel from '../components/UploadPanel';
+import styles from './WorkspacePage.module.css';
 
 function WorkspacePage({
   dragActive,
@@ -20,6 +21,8 @@ function WorkspacePage({
   onUploadOnly,
   result,
   saving,
+  token,
+  usage,
 }) {
   return (
     <>
@@ -31,7 +34,7 @@ function WorkspacePage({
         </div>
       </section>
 
-      <section className="workspace">
+      <section className={`${styles.moduleRoot} workspace`}>
         <UploadPanel
           dragActive={dragActive}
           error={error}
@@ -46,6 +49,7 @@ function WorkspacePage({
           onSubmit={onSubmit}
           onUploadOnly={onUploadOnly}
           result={result}
+          usage={usage}
         />
         <ReviewPanel
           draft={draft}
@@ -54,6 +58,7 @@ function WorkspacePage({
           onUpdateDraft={onUpdateDraft}
           result={result}
           saving={saving}
+          token={token}
         />
       </section>
     </>
@@ -61,4 +66,3 @@ function WorkspacePage({
 }
 
 export default WorkspacePage;
-

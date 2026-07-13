@@ -1,4 +1,5 @@
 import { formatMoney } from '../utils/format';
+import styles from './DashboardPanel.module.css';
 
 function BreakdownList({ emptyText, items, currency }) {
   if (items.length === 0) {
@@ -18,8 +19,10 @@ function BreakdownList({ emptyText, items, currency }) {
 }
 
 function DashboardPanel({ dashboard, onRefresh }) {
+  const usage = dashboard?.usage;
+
   return (
-    <section className="dashboard-panel">
+    <section className={`${styles.moduleRoot} dashboard-panel`}>
       <div className="panel-heading">
         <div>
           <h2>Табло</h2>
@@ -40,10 +43,27 @@ function DashboardPanel({ dashboard, onRefresh }) {
           <strong>{formatMoney(dashboard?.totalVat, dashboard?.currency)}</strong>
         </div>
         <div>
-          <span>Брой документи</span>
+          <span>Брой одобрени документи</span>
           <strong>{dashboard?.documentCount || 0}</strong>
         </div>
       </div>
+
+      {usage && (
+        <div className={usage.limitReached ? 'usage-card limit-reached' : 'usage-card'}>
+          <div>
+            <span>Месечен OCR лимит</span>
+            <strong>{usage.usedDocuments} / {usage.documentLimit}</strong>
+            <p>
+              {usage.limitReached
+                ? 'Лимитът е достигнат. Качването на нови документи е блокирано.'
+                : `Остават ${usage.remainingDocuments} документа по план ${usage.plan}.`}
+            </p>
+          </div>
+          <div className="usage-progress" aria-hidden="true">
+            <i style={{ width: `${Math.min((usage.usedDocuments / usage.documentLimit) * 100, 100)}%` }} />
+          </div>
+        </div>
+      )}
 
       <div className="dashboard-breakdowns">
         <section>
@@ -69,4 +89,3 @@ function DashboardPanel({ dashboard, onRefresh }) {
 }
 
 export default DashboardPanel;
-

@@ -1,4 +1,5 @@
 const path = require("node:path");
+const fs = require("node:fs/promises");
 const { config } = require("../config/env");
 const { HttpError } = require("../utils/httpError");
 const { ocrMimeTypes } = require("../middleware/uploadMiddleware");
@@ -9,6 +10,7 @@ const {
   approveReviewedDocument,
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
+  findDocumentFileById,
   findDocumentById,
   findPotentialDuplicateDocument,
   getCompanyDashboardDocuments,
@@ -17,6 +19,35 @@ const {
   updateExtractedDocument,
   updateReviewedDocument
 } = require("./documentRepository");
+
+let activeExtractionJobs = 0;
+
+async function runWithExtractionSlot(work) {
+  if (activeExtractionJobs >= config.ocrMaxConcurrentJobs) {
+    const error = new HttpError(429, "Има твърде много активни OCR обработки. Опитай отново след малко.");
+    error.code = "ocr_concurrency_limit";
+    throw error;
+  }
+
+  activeExtractionJobs += 1;
+  try {
+    return await work();
+  } finally {
+    activeExtractionJobs -= 1;
+  }
+}
+
+function buildFailureMetadata(error) {
+  const code = error.code || (error.statusCode === 504 ? "processing_timeout" : "processing_failed");
+  const isExpected = error instanceof HttpError || error.statusCode;
+
+  return {
+    failedAt: new Date(),
+    processingCompletedAt: new Date(),
+    failureCode: code,
+    failureMessage: isExpected ? String(error.message).slice(0, 500) : "Обработката не успя. Опитай отново или качи по-ясен документ."
+  };
+}
 
 function buildFilePayload(file, authContext) {
   const storedFile = path.basename(file.path);
@@ -70,13 +101,22 @@ async function extractDocument(file, authContext) {
   const uploadedDocument = await createUploadedDocument(buildFilePayload(file, authContext));
 
   try {
-    await updateDocumentStatus(uploadedDocument.id, authContext.company._id, "processing");
-    const imagePaths = await getOcrImagePaths(file);
-    const extracted = await applyAutomaticChecks(
-      await extractExpenseDocumentFromImages(imagePaths),
-      authContext,
-      uploadedDocument.id
-    );
+    await updateDocumentStatus(uploadedDocument.id, authContext.company._id, "processing", {
+      processingStartedAt: new Date(),
+      processingCompletedAt: null,
+      failedAt: null,
+      failureCode: null,
+      failureMessage: null
+    });
+
+    const extracted = await runWithExtractionSlot(async () => {
+      const imagePaths = await getOcrImagePaths(file);
+      return applyAutomaticChecks(
+        await extractExpenseDocumentFromImages(imagePaths),
+        authContext,
+        uploadedDocument.id
+      );
+    });
 
     return updateExtractedDocument(uploadedDocument.id, authContext.company._id, {
       model: config.model,
@@ -84,13 +124,47 @@ async function extractDocument(file, authContext) {
       data: extracted
     });
   } catch (error) {
-    await updateDocumentStatus(uploadedDocument.id, authContext.company._id, "failed").catch(() => {});
+    await updateDocumentStatus(
+      uploadedDocument.id,
+      authContext.company._id,
+      "failed",
+      buildFailureMetadata(error)
+    ).catch(() => {});
     throw error;
   }
 }
 
 async function getDocument(documentId, authContext) {
   return findDocumentById(documentId, authContext.company._id);
+}
+
+async function getDocumentFile(documentId, authContext) {
+  const documentFile = await findDocumentFileById(documentId, authContext.company._id);
+  const uploadRoot = path.resolve(config.uploadDir);
+  const storedFile = path.basename(documentFile.storedFile || "");
+
+  if (!storedFile) {
+    throw new HttpError(404, "Ð¤Ð°Ð¹Ð»ÑŠÑ‚ Ð½Ðµ Ðµ Ð½Ð°Ð¼ÐµÑ€ÐµÐ½.");
+  }
+
+  const filePath = path.resolve(uploadRoot, storedFile);
+  const relativePath = path.relative(uploadRoot, filePath);
+
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    throw new HttpError(400, "ÐÐµÐ²Ð°Ð»Ð¸Ð´ÐµÐ½ Ñ„Ð°Ð¹Ð».");
+  }
+
+  try {
+    await fs.access(filePath);
+  } catch (_error) {
+    throw new HttpError(404, "Ð¤Ð°Ð¹Ð»ÑŠÑ‚ Ð½Ðµ Ðµ Ð½Ð°Ð¼ÐµÑ€ÐµÐ½.");
+  }
+
+  return {
+    filePath,
+    filename: documentFile.originalName || storedFile,
+    mimeType: documentFile.mimeType
+  };
 }
 
 async function listDocuments(filters, authContext) {
@@ -142,12 +216,16 @@ function toSortedBreakdown(map, limit) {
 
 async function getDashboard(authContext) {
   const monthRange = getCurrentMonthRange();
-  const documents = await getCompanyDashboardDocuments(authContext.company._id, monthRange);
+  const [documents, usedDocuments] = await Promise.all([
+    getCompanyDashboardDocuments(authContext.company._id, monthRange),
+    countCompanyDocumentsThisMonth(authContext.company._id)
+  ]);
   const suppliers = new Map();
   const categories = new Map();
   const currencies = new Set();
   let totalExpenses = 0;
   let totalVat = 0;
+  const documentLimit = authContext.company.documentLimit;
 
   for (const document of documents) {
     const data = document.data || {};
@@ -169,6 +247,13 @@ async function getDashboard(authContext) {
     totalExpenses,
     totalVat,
     documentCount: documents.length,
+    usage: {
+      usedDocuments,
+      documentLimit,
+      remainingDocuments: Math.max(documentLimit - usedDocuments, 0),
+      limitReached: usedDocuments >= documentLimit,
+      plan: authContext.company.plan
+    },
     topSuppliers: toSortedBreakdown(suppliers, 5),
     expensesByCategory: toSortedBreakdown(categories)
   };
@@ -201,6 +286,7 @@ module.exports = {
   extractDocument,
   getDashboard,
   getDocument,
+  getDocumentFile,
   listDocuments,
   saveReviewedDocument,
   uploadDocumentOnly
