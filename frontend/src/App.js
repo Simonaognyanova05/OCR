@@ -7,12 +7,13 @@ import { useAuth } from './hooks/useAuth';
 import { useDashboard } from './hooks/useDashboard';
 import { initialDocumentFilters, useDocuments } from './hooks/useDocuments';
 import { useHealth } from './hooks/useHealth';
+import AdminPage from './pages/AdminPage';
 import CompanyPage from './pages/CompanyPage';
 import DashboardPage from './pages/DashboardPage';
 import DocumentsPage from './pages/DocumentsPage';
 import WorkspacePage from './pages/WorkspacePage';
 import { login, register } from './services/authService';
-import { updateCompany } from './services/companyService';
+import { getCompanyProfile, requestSubscriptionPlan, updateCompany } from './services/companyService';
 import { approveDocument, extractDocument, saveDocumentReview, uploadDocument } from './services/documentService';
 import { downloadDocumentExport, downloadMonthlyPdfReport } from './services/exportService';
 import { getCurrentMonthValue } from './utils/date';
@@ -29,6 +30,7 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [requestedPlan, setRequestedPlan] = useState(auth.company?.plan || 'free');
 
   const handleError = useCallback((message) => {
     setError(message);
@@ -49,6 +51,24 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
       loadDocuments();
     }
   }, [auth?.token, loadDashboard, loadDocuments]);
+
+  useEffect(() => {
+    async function loadCompanyProfile() {
+      try {
+        const data = await getCompanyProfile(auth.token);
+        saveAuth({ ...auth, ...data });
+        setRequestedPlan(data.company?.plan || auth.company?.plan || 'free');
+      } catch (requestError) {
+        setError(requestError.message);
+      }
+    }
+
+    if (auth?.token) {
+      loadCompanyProfile();
+    }
+    // Профилът се презарежда само при нов token, за да не правим loop след saveAuth.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth?.token]);
 
   function resetMessages() {
     setError('');
@@ -80,7 +100,12 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
     resetMessages();
 
     try {
-      const data = await updateCompany(companyDraft, auth.token);
+      const data = await updateCompany({
+        name: companyDraft.name,
+        tax_id: companyDraft.tax_id,
+        vat_id: companyDraft.vat_id,
+        address: companyDraft.address,
+      }, auth.token);
       saveAuth({ ...auth, company: data.company });
       setNotice('Фирменият профил е запазен.');
     } catch (requestError) {
@@ -90,8 +115,28 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
     }
   }
 
+  async function handleSubscriptionRequest(plan) {
+    setSaving(true);
+    resetMessages();
+
+    try {
+      const data = await requestSubscriptionPlan({ plan }, auth.token);
+      saveAuth({ ...auth, pending_subscription_request: data.subscription_request });
+      setNotice('Заявката за абонамент е изпратена успешно.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
+    if (dashboard?.usage?.limitReached) {
+      setError('Достигнат е месечният лимит за OCR документи. Заяви по-висок план, за да качваш още.');
+      return;
+    }
+
     if (!file) {
       setError('Избери PDF, JPG или PNG документ.');
       return;
@@ -117,6 +162,11 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
   }
 
   async function handleUploadOnly() {
+    if (dashboard?.usage?.limitReached) {
+      setError('Достигнат е месечният лимит за документи. Заяви по-висок план, за да качваш още.');
+      return;
+    }
+
     if (!file) {
       setError('Избери PDF, JPG или PNG документ.');
       return;
@@ -273,6 +323,7 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
               onUploadOnly={handleUploadOnly}
               result={result}
               saving={saving}
+              usage={dashboard?.usage}
             />
           )}
         />
@@ -282,11 +333,18 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
             <CompanyPage
               auth={auth}
               companyDraft={companyDraft}
+              onRequestSubscription={handleSubscriptionRequest}
               onSave={handleCompanySave}
               onUpdate={updateCompanyDraft}
+              requestedPlan={requestedPlan}
               saving={saving}
+              setRequestedPlan={setRequestedPlan}
             />
           )}
+        />
+        <Route
+          path="admin"
+          element={auth.user?.is_admin ? <AdminPage auth={auth} /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

@@ -3,6 +3,7 @@ import { getImportantWarnings } from '../utils/review';
 import DocumentPreview from './DocumentPreview';
 import Field from './forms/Field';
 import SelectField from './forms/SelectField';
+import styles from './ReviewPanel.module.css';
 
 function ReviewPanel({
   draft,
@@ -16,7 +17,7 @@ function ReviewPanel({
   const warnings = getImportantWarnings(extracted);
 
   return (
-    <section className="result-panel">
+    <section className={`${styles.moduleRoot} result-panel`}>
       <h2>Проверка от потребителя</h2>
       {extracted ? (
         <div className="review-layout">
@@ -80,4 +81,3 @@ function ReviewPanel({
 }
 
 export default ReviewPanel;
-

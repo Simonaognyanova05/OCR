@@ -1,0 +1,94 @@
+﻿.moduleRoot {}
+
+:global(.plans-grid) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+:global(.plan-card) {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-height: 170px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: linear-gradient(180deg, #fff, var(--panel-soft));
+  cursor: pointer;
+}
+
+:global(.plan-card).selected {
+  border-color: var(--primary);
+  box-shadow: 0 12px 24px rgba(29, 78, 216, 0.14);
+}
+
+:global(.plan-card) input {
+  width: fit-content;
+}
+
+:global(.plan-card) strong {
+  font-size: 18px;
+}
+
+:global(.plan-card) span {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+:global(.plan-card) p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+:global(.payment-box) {
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 16px;
+  background: #eff6ff;
+}
+
+:global(.payment-box) h3 {
+  margin: 0 0 8px;
+}
+
+:global(.payment-box) p {
+  margin: 0 0 14px;
+  color: #1e3a8a;
+}
+
+:global(.payment-grid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+:global(.payment-grid) div {
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+:global(.payment-grid) span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+:global(.payment-grid) strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+:global(.payment-box) :global(.payment-note) {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 14px;
+}

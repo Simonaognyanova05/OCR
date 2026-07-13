@@ -1,9 +1,10 @@
 const Company = require("../models/Company");
 const Membership = require("../models/Membership");
+const SubscriptionRequest = require("../models/SubscriptionRequest");
 const User = require("../models/User");
 const { HttpError } = require("../utils/httpError");
 const { hashPassword } = require("../utils/auth");
-const { getDocumentLimitForPlan } = require("./planService");
+const { assertValidPlan, getDocumentLimitForPlan, getPlans } = require("./planService");
 const { toApiCompany } = require("./authService");
 
 function assertOwner(membership) {
@@ -13,12 +14,23 @@ function assertOwner(membership) {
 }
 
 async function getCompanyProfile(authContext) {
+  const pendingSubscriptionRequest = await SubscriptionRequest.findOne({
+    companyId: authContext.company._id,
+    status: "pending"
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
   return {
     company: toApiCompany(authContext.company),
     membership: {
       id: authContext.membership._id.toString(),
       role: authContext.membership.role
-    }
+    },
+    plans: getPlans(),
+    pending_subscription_request: pendingSubscriptionRequest
+      ? toApiSubscriptionRequest(pendingSubscriptionRequest)
+      : null
   };
 }
 
@@ -33,8 +45,7 @@ async function updateCompanyProfile(authContext, payload) {
   if (payload.address !== undefined) updates.address = payload.address || null;
 
   if (payload.plan !== undefined) {
-    updates.plan = payload.plan;
-    updates.documentLimit = getDocumentLimitForPlan(payload.plan);
+    throw new HttpError(400, "Планът се сменя чрез заявка за абонамент.");
   }
 
   const company = await Company.findByIdAndUpdate(authContext.company._id, { $set: updates }, {
@@ -44,6 +55,56 @@ async function updateCompanyProfile(authContext, payload) {
 
   return {
     company: toApiCompany(company)
+  };
+}
+
+function toApiSubscriptionRequest(subscriptionRequest) {
+  return {
+    id: subscriptionRequest._id.toString(),
+    current_plan: subscriptionRequest.currentPlan,
+    requested_plan: subscriptionRequest.requestedPlan,
+    status: subscriptionRequest.status,
+    note: subscriptionRequest.note,
+    created_at: subscriptionRequest.createdAt,
+    updated_at: subscriptionRequest.updatedAt
+  };
+}
+
+async function requestSubscriptionPlan(authContext, payload) {
+  assertOwner(authContext.membership);
+
+  const requestedPlan = String(payload.plan || "").trim();
+  const note = payload.note ? String(payload.note).trim() : null;
+
+  try {
+    assertValidPlan(requestedPlan);
+  } catch (_error) {
+    throw new HttpError(400, "Избери валиден абонаментен план.");
+  }
+
+  if (requestedPlan === authContext.company.plan) {
+    throw new HttpError(400, "Фирмата вече е на този план.");
+  }
+
+  const existingPendingRequest = await SubscriptionRequest.findOne({
+    companyId: authContext.company._id,
+    status: "pending"
+  });
+
+  if (existingPendingRequest) {
+    throw new HttpError(409, "Вече има чакаща заявка за абонамент.");
+  }
+
+  const subscriptionRequest = await SubscriptionRequest.create({
+    companyId: authContext.company._id,
+    requestedBy: authContext.user._id,
+    currentPlan: authContext.company.plan,
+    requestedPlan,
+    note
+  });
+
+  return {
+    subscription_request: toApiSubscriptionRequest(subscriptionRequest)
   };
 }
 
@@ -123,5 +184,6 @@ module.exports = {
   createCompanyMembership,
   getCompanyProfile,
   listCompanyMemberships,
+  requestSubscriptionPlan,
   updateCompanyProfile
 };

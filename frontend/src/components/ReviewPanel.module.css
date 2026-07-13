@@ -1,0 +1,39 @@
+﻿.moduleRoot {}
+
+:global(.result-panel) {
+  min-width: 0;
+  container-type: inline-size;
+}
+
+:global(.review-layout) {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
+  gap: 20px;
+  align-items: start;
+}
+
+:global(.preview-panel),
+:global(.fields-panel) {
+  min-width: 0;
+}
+
+:global(.document-preview) {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+:global(.document-preview) img,
+:global(.document-preview) iframe {
+  display: block;
+  width: 100%;
+  height: min(72vh, 760px);
+  border: 0;
+  object-fit: contain;
+  background: #fff;
+}
+
+:global(.review-fields) {
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+}

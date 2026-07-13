@@ -1,0 +1,277 @@
+﻿.moduleRoot {}
+
+@media (max-width: 1040px) {
+  :global(.app-shell) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.sidebar) {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  :global(.main-nav) {
+    display: flex;
+    overflow-x: auto;
+    margin-top: 20px;
+  }
+
+  :global(.topbar),
+  :global(.topbar-actions),
+  :global(.panel-heading),
+  :global(.review-layout) {
+    display: grid;
+  }
+
+  :global(.login-page) {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  :global(.login-page) :global(.auth-panel) {
+    width: min(460px, 100%);
+    justify-self: center;
+  }
+
+  :global(.topbar-actions),
+  :global(.panel-tools) {
+    justify-content: stretch;
+  }
+
+  :global(.status),
+  :global(.user-chip),
+  :global(.topbar-actions) button {
+    width: 100%;
+  }
+
+  :global(.workspace) {
+    grid-template-columns: 1fr;
+    overflow-x: visible;
+  }
+
+  :global(.review-layout) {
+    grid-template-columns: 1fr;
+  }
+}
+
+@container (max-width: 920px) {
+  :global(.review-layout) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.review-fields) {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  :global(.fields-panel) :global(.actions) {
+    justify-content: stretch;
+  }
+
+  :global(.fields-panel) :global(.actions) button {
+    flex: 1 1 220px;
+  }
+}
+
+@media (max-width: 820px) {
+  :global(.page-content),
+  :global(.login-page) {
+    width: min(100% - 24px, 100%);
+  }
+
+  :global(.summary-grid),
+  :global(.mvp-flow),
+  :global(.dashboard-metrics),
+  :global(.dashboard-breakdowns),
+  :global(.plans-grid),
+  :global(.payment-grid),
+  :global(.edit-form),
+  :global(.filters-grid),
+  :global(.review-fields) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.page-hero) h2,
+  :global(.login-hero) h1 {
+    font-size: 28px;
+  }
+
+  :global(.page-hero),
+  :global(.login-hero),
+  :global(.upload-panel),
+  :global(.result-panel),
+  :global(.auth-panel),
+  :global(.company-panel),
+  :global(.account-bar),
+  :global(.dashboard-panel),
+  :global(.documents-panel) {
+    padding: 16px;
+  }
+
+  :global(.document-preview) img,
+  :global(.document-preview) iframe {
+    height: min(64vh, 560px);
+  }
+}
+
+@media (max-width: 640px) {
+  :global(.sidebar) {
+    padding: 16px;
+  }
+
+  :global(.brand-mark) {
+    width: 38px;
+    height: 38px;
+  }
+
+  :global(.main-nav) {
+    margin-top: 16px;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  :global(.nav-link) {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  :global(.topbar) {
+    padding: 14px 16px;
+  }
+
+  :global(.topbar) h1 {
+    font-size: 20px;
+  }
+
+  :global(.page-content) {
+    width: min(100% - 20px, 100%);
+    padding: 20px 0 32px;
+  }
+
+  :global(.page-hero) h2,
+  :global(.login-hero) h1 {
+    font-size: 24px;
+  }
+
+  :global(.page-hero) p,
+  :global(.login-hero) p {
+    font-size: 15px;
+  }
+
+  :global(.login-page) {
+    width: min(100% - 20px, 100%);
+    padding: 24px 0;
+    gap: 14px;
+  }
+
+  :global(.login-hero) {
+    min-height: auto;
+  }
+
+  :global(.login-page) :global(.auth-panel) {
+    width: 100%;
+  }
+
+  :global(.panel-heading),
+  :global(.account-bar),
+  :global(.file-meta) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.panel-tools),
+  :global(.actions) {
+    width: 100%;
+  }
+
+  :global(.panel-tools) button,
+  :global(.actions) button {
+    width: 100%;
+  }
+
+  :global(.dashboard-metrics) strong {
+    font-size: 22px;
+  }
+
+  :global(.breakdown-list) li {
+    display: grid;
+  }
+
+  :global(.table-wrap) {
+    border: 0;
+    overflow: visible;
+  }
+
+  :global(.documents-table),
+  :global(.documents-table) thead,
+  :global(.documents-table) tbody,
+  :global(.documents-table) tr,
+  :global(.documents-table) th,
+  :global(.documents-table) td {
+    display: block;
+  }
+
+  :global(.documents-table) {
+    min-width: 0;
+  }
+
+  :global(.documents-table) thead {
+    display: none;
+  }
+
+  :global(.documents-table) tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  :global(.documents-table) tr {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  :global(.documents-table) td {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 10px;
+    border-bottom: 1px solid #e4e9f2;
+    padding: 10px 12px;
+  }
+
+  :global(.documents-table) td:last-child {
+    border-bottom: 0;
+  }
+
+  :global(.documents-table) td::before {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  :global(.documents-table) td:nth-child(1)::before { content: "Ãâ€ÃÂ°Ã‘â€šÃÂ°"; }
+  :global(.documents-table) td:nth-child(2)::before { content: "ÃÂ¢ÃÂ¸ÃÂ¿"; }
+  :global(.documents-table) td:nth-child(3)::before { content: "Ãâ€ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²Ã‘â€¡ÃÂ¸ÃÂº"; }
+  :global(.documents-table) td:nth-child(4)::before { content: "ÃÅ¸ÃÂ¾ÃÂ»Ã‘Æ’Ã‘â€¡ÃÂ°Ã‘â€šÃÂµÃÂ»"; }
+  :global(.documents-table) td:nth-child(5)::before { content: "ÃÂ¡Ã‘Æ’ÃÂ¼ÃÂ°"; }
+  :global(.documents-table) td:nth-child(6)::before { content: "Ãâ€Ãâ€ÃÂ¡"; }
+  :global(.documents-table) td:nth-child(7)::before { content: "ÃÂ¡Ã‘â€šÃÂ°Ã‘â€šÃ‘Æ’Ã‘Â"; }
+  :global(.documents-table) td:nth-child(8)::before { content: "ÃÅ¡ÃÂ°Ã‘â€šÃÂµÃÂ³ÃÂ¾Ã‘â‚¬ÃÂ¸Ã‘Â"; }
+
+  :global(.empty-cell) {
+    display: block;
+    text-align: left;
+  }
+}
+
+@media (max-width: 420px) {
+  :global(.documents-table) td {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  pre {
+    font-size: 12px;
+  }
+}

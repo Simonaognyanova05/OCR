@@ -1,3 +1,5 @@
+import styles from './AuthPanel.module.css';
+
 function AuthPanel({
   authForm,
   authMode,
@@ -9,7 +11,7 @@ function AuthPanel({
   onSubmit,
 }) {
   return (
-    <section className="auth-panel">
+    <section className={`${styles.moduleRoot} auth-panel`}>
       <div className="auth-tabs">
         <button type="button" className={authMode === 'login' ? '' : 'secondary-button'} onClick={() => onAuthModeChange('login')}>
           Вход
@@ -48,4 +50,3 @@ function AuthPanel({
 }
 
 export default AuthPanel;
-

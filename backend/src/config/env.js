@@ -22,6 +22,7 @@ const config = {
   authSecret: process.env.AUTH_SECRET || "dev-only-change-this-auth-secret",
   port: Number(process.env.PORT || 3000),
   corsOrigins: readCsvEnv(process.env.CORS_ORIGINS),
+  adminEmails: readCsvEnv(process.env.ADMIN_EMAILS).map((email) => email.toLowerCase()),
   uploadDir: path.resolve(backendDir, process.env.UPLOAD_DIR || "uploads"),
   outputDir: path.resolve(backendDir, process.env.OUTPUT_DIR || "outputs"),
   pdfFontRegularPath: process.env.PDF_FONT_REGULAR_PATH,

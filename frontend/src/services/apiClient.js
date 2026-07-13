@@ -20,13 +20,18 @@ export async function getJson(path, token) {
 }
 
 export async function sendJson(path, method, body, token) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const options = {
     method,
     headers: token
       ? authHeaders(token, { 'Content-Type': 'application/json' })
       : { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  };
+
+  if (body !== undefined) {
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, options);
   return parseJsonResponse(response);
 }
 
@@ -60,4 +65,3 @@ export function downloadBrowserFile(blob, filename) {
   link.click();
   window.URL.revokeObjectURL(url);
 }
-
