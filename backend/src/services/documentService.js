@@ -57,7 +57,6 @@ function buildFilePayload(file, authContext) {
     uploaded_by: authContext.user._id,
     original_file_name: file.originalname,
     stored_file: storedFile,
-    file_url: `/uploads/${storedFile}`,
     mime_type: file.mimetype
   };
 }

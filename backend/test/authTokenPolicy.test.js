@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
 const { signToken, verifyToken } = require("../src/utils/auth");
-const { assertAuthConfig, config } = require("../src/config/env");
+const { assertAuthConfig, assertCorsConfig, config } = require("../src/config/env");
 
 function signLegacyToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
@@ -48,5 +48,24 @@ test("production rejects missing, default, or weak auth secrets", () => {
   assert.doesNotThrow(() => assertAuthConfig({
     nodeEnv: "development",
     authSecret: "dev-only-change-this-auth-secret"
+  }));
+});
+
+test("production rejects empty CORS origins", () => {
+  assert.throws(
+    () => assertCorsConfig({ nodeEnv: "production", corsOrigins: [] }),
+    /CORS_ORIGINS/
+  );
+  assert.throws(
+    () => assertCorsConfig({ nodeEnv: "production" }),
+    /CORS_ORIGINS/
+  );
+  assert.doesNotThrow(() => assertCorsConfig({
+    nodeEnv: "production",
+    corsOrigins: ["https://app.example.com"]
+  }));
+  assert.doesNotThrow(() => assertCorsConfig({
+    nodeEnv: "development",
+    corsOrigins: []
   }));
 });

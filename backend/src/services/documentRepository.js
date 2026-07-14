@@ -47,10 +47,6 @@ function toApiDocumentListItem(document) {
   };
 }
 
-function buildFileUrl(storedFile) {
-  return `/uploads/${storedFile}`;
-}
-
 function addRegexFilter(query, field, value) {
   if (value) {
     query[field] = { $regex: String(value).trim(), $options: "i" };
@@ -90,7 +86,7 @@ async function createUploadedDocument(payload) {
     originalName: payload.original_file_name,
     originalFileName: payload.original_file_name,
     storedFile: payload.stored_file,
-    fileUrl: payload.file_url || buildFileUrl(payload.stored_file),
+    fileUrl: payload.file_url || null,
     mimeType: payload.mime_type,
     status: "uploaded",
     documentType: null,

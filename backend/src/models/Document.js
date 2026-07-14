@@ -28,7 +28,7 @@ const documentSchema = new mongoose.Schema(
     },
     fileUrl: {
       type: String,
-      required: true
+      default: null
     },
     mimeType: {
       type: String,

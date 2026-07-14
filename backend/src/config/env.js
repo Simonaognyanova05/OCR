@@ -68,12 +68,26 @@ function assertAuthConfig(authConfig = config) {
   }
 }
 
+function assertCorsConfig(corsConfig = config) {
+  const isProduction = corsConfig.nodeEnv === "production";
+
+  if (!isProduction) {
+    return;
+  }
+
+  if (!Array.isArray(corsConfig.corsOrigins) || corsConfig.corsOrigins.length === 0) {
+    throw new Error("CORS_ORIGINS must include at least one allowed origin in production.");
+  }
+}
+
 function assertRuntimeConfig() {
   assertAuthConfig();
+  assertCorsConfig();
 }
 
 module.exports = {
   assertAuthConfig,
+  assertCorsConfig,
   config,
   assertConfig,
   assertDatabaseConfig,
