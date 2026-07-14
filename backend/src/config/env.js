@@ -41,6 +41,14 @@ const config = {
   pdfConversionTimeoutMs: readPositiveIntEnv("PDF_CONVERSION_TIMEOUT_MS", 30000),
   ocrRequestTimeoutMs: readPositiveIntEnv("OCR_REQUEST_TIMEOUT_MS", 60000),
   ocrMaxConcurrentJobs: readPositiveIntEnv("OCR_MAX_CONCURRENT_JOBS", 2),
+  authRateLimitWindowMs: readPositiveIntEnv("AUTH_RATE_LIMIT_WINDOW_MS", 15 * 60 * 1000),
+  authRateLimitMax: readPositiveIntEnv("AUTH_RATE_LIMIT_MAX", 20),
+  uploadRateLimitWindowMs: readPositiveIntEnv("UPLOAD_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
+  uploadRateLimitMax: readPositiveIntEnv("UPLOAD_RATE_LIMIT_MAX", 30),
+  extractRateLimitWindowMs: readPositiveIntEnv("EXTRACT_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
+  extractRateLimitMax: readPositiveIntEnv("EXTRACT_RATE_LIMIT_MAX", 10),
+  exportRateLimitWindowMs: readPositiveIntEnv("EXPORT_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
+  exportRateLimitMax: readPositiveIntEnv("EXPORT_RATE_LIMIT_MAX", 60),
 };
 
 function assertConfig() {

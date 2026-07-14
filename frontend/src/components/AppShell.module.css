@@ -122,7 +122,7 @@
 }
 
 :global(.page-content) {
-  width: min(1280px, calc(100% - 48px));
+  width: min(1520px, calc(100% - 48px));
   margin: 0 auto;
   padding: 28px 0 40px;
 }

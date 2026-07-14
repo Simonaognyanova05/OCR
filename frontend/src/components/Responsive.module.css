@@ -56,13 +56,13 @@
   }
 }
 
-@container (max-width: 920px) {
+@container (max-width: 1080px) {
   :global(.review-layout) {
     grid-template-columns: 1fr;
   }
 
   :global(.review-fields) {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
   }
 
   :global(.fields-panel) :global(.actions) {
