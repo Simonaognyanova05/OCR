@@ -5,6 +5,12 @@ const planDocumentLimits = {
   business: 5000
 };
 
+const planPricesMonthlyEur = {
+  starter: 15,
+  pro: 49,
+  business: 149
+};
+
 const plans = [
   { id: "free", name: "Free", documentLimit: 50, description: "За тест и малък обем документи." },
   { id: "starter", name: "Starter", documentLimit: 200, description: "За малки фирми с регулярни разходни документи." },
@@ -13,7 +19,10 @@ const plans = [
 ];
 
 function getPlans() {
-  return plans;
+  return plans.map((plan) => ({
+    ...plan,
+    priceMonthlyEur: planPricesMonthlyEur[plan.id] || null
+  }));
 }
 
 function assertValidPlan(plan) {

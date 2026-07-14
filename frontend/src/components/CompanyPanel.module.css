@@ -32,6 +32,12 @@
   font-size: 18px;
 }
 
+:global(.plan-card) :global(.plan-price) {
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 900;
+}
+
 :global(.plan-card) span {
   color: var(--primary);
   font-weight: 800;

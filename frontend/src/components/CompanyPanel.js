@@ -1,6 +1,12 @@
 import { BILLING_INFO, buildPaymentReason } from '../config/billing';
 import styles from './CompanyPanel.module.css';
 
+const planPricesMonthlyEur = {
+  starter: 15,
+  pro: 49,
+  business: 149,
+};
+
 const fallbackPlans = [
   { id: 'free', name: 'Free', documentLimit: 50, description: 'За тест и малък обем документи.' },
   { id: 'starter', name: 'Starter', documentLimit: 200, description: 'За малки фирми с регулярни документи.' },
@@ -55,7 +61,10 @@ function CompanyPanel({
   saving,
   setRequestedPlan,
 }) {
-  const plans = auth.plans || fallbackPlans;
+  const plans = (auth.plans || fallbackPlans).map((plan) => ({
+    ...plan,
+    priceMonthlyEur: plan.priceMonthlyEur ?? planPricesMonthlyEur[plan.id] ?? null,
+  }));
   const currentPlan = companyDraft?.plan || auth.company?.plan || 'free';
   const pendingRequest = auth.pending_subscription_request;
   const selectedPlan = requestedPlan || currentPlan;
@@ -125,6 +134,9 @@ function CompanyPanel({
                 disabled={saving || Boolean(pendingRequest)}
               />
               <strong>{plan.name}</strong>
+              {plan.priceMonthlyEur ? (
+                <b className="plan-price">€{plan.priceMonthlyEur} / месец</b>
+              ) : null}
               <span>{plan.documentLimit} документа / месец</span>
               <p>{plan.description}</p>
             </label>
