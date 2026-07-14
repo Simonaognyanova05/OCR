@@ -35,5 +35,5 @@
 }
 
 :global(.review-fields) {
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
 }
