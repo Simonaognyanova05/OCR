@@ -7,4 +7,3 @@ export function getImportantWarnings(data) {
   if (!data.supplierName) warnings.push('Липсва доставчик');
   return warnings;
 }
-

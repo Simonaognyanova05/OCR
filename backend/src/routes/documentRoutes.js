@@ -14,7 +14,10 @@ const {
   exportMonthlyPdfReportHandler,
   exportPdfHandler
 } = require("../controllers/exportController");
-const { uploadDocument } = require("../middleware/uploadMiddleware");
+const {
+  uploadDocument,
+  validateUploadedDocumentSignature
+} = require("../middleware/uploadMiddleware");
 const { requireAuth, requireRole } = require("../middleware/authMiddleware");
 const {
   exportRateLimit,
@@ -24,8 +27,8 @@ const {
 
 const router = express.Router();
 
-router.post("/documents/upload", requireAuth, uploadRateLimit, uploadDocument.single("document"), uploadDocumentHandler);
-router.post("/documents/extract", requireAuth, extractRateLimit, uploadDocument.single("document"), extractDocumentHandler);
+router.post("/documents/upload", requireAuth, uploadRateLimit, uploadDocument.single("document"), validateUploadedDocumentSignature, uploadDocumentHandler);
+router.post("/documents/extract", requireAuth, extractRateLimit, uploadDocument.single("document"), validateUploadedDocumentSignature, extractDocumentHandler);
 router.get("/dashboard", requireAuth, getDashboardHandler);
 router.get("/documents", requireAuth, listDocumentsHandler);
 router.get("/reports/monthly/pdf", requireAuth, requireRole(["owner", "accountant"]), exportRateLimit, exportMonthlyPdfReportHandler);
