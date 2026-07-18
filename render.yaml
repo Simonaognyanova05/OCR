@@ -1,11 +1,12 @@
 services:
   - type: web
     name: ocr-finance-backend
-    env: node
+    runtime: docker
     rootDir: backend
     plan: starter
-    buildCommand: npm install && python -m pip install -r requirements.txt
-    startCommand: npm start
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    dockerCommand: ./scripts/render-start.sh
     disk:
       name: ocr-finance-backend-data
       mountPath: /var/data
@@ -38,11 +39,17 @@ services:
       - key: LOCAL_STORAGE_CLEANUP_INTERVAL_MS
         value: 21600000
       - key: PYTHON_COMMAND
-        value: python
+        value: python3
       - key: PDF_RENDER_DPI
         value: 200
       - key: PDF_MAX_PAGES
         value: 5
+      - key: MALWARE_SCAN_COMMAND
+        value: clamscan
+      - key: MALWARE_SCAN_ARGS
+        value: --no-summary,--infected
+      - key: MALWARE_SCAN_TIMEOUT_MS
+        value: 30000
 
   - type: web
     name: ocr-finance-frontend

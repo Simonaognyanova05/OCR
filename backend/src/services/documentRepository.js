@@ -418,7 +418,7 @@ async function approveReviewedDocument(documentId, reviewedData, companyId) {
 
   const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
   const document = await Document.findOneAndUpdate(
-    { _id: documentId, companyId },
+    { _id: documentId, companyId, status: "needs_review" },
     {
       $set: {
         status: "approved",
@@ -435,6 +435,11 @@ async function approveReviewedDocument(documentId, reviewedData, companyId) {
   );
 
   if (!document) {
+    const existingDocument = await Document.exists({ _id: documentId, companyId });
+    if (existingDocument) {
+      throw new HttpError(409, "Документът трябва да бъде в статус за преглед преди одобрение.");
+    }
+
     throw new HttpError(404, "Документът не е намерен.");
   }
 
