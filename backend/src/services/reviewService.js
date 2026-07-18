@@ -128,8 +128,8 @@ function addItemReviewRules(cleanedDocumentData, warnings) {
 
 function applyReviewRules(documentData) {
   const reviewReasons = new Set();
-  const warnings = (documentData?.warnings || []).filter((warning) => !generatedWarnings.has(warning));
   const sanitizedDocumentData = sanitizeDocumentDataForStorage(documentData);
+  const warnings = (sanitizedDocumentData.warnings || []).filter((warning) => !generatedWarnings.has(warning));
   const cleanedDocumentData = {
     ...sanitizedDocumentData,
     items: (sanitizedDocumentData.items || []).map((item) => {

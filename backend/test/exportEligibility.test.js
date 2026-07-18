@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const ExcelJS = require("exceljs");
 const Document = require("../src/models/Document");
 const documentRepository = require("../src/services/documentRepository");
 
@@ -24,7 +25,7 @@ function loadExportServiceWithRepositoryStubs(stubs) {
   };
 }
 
-function buildDocument(status) {
+function buildDocument(status, dataOverrides = {}) {
   return {
     id: "507f1f77bcf86cd799439011",
     status,
@@ -35,7 +36,8 @@ function buildDocument(status) {
       supplierName: "Supplier",
       recipientName: "Recipient",
       totalAmount: 10,
-      currency: "BGN"
+      currency: "BGN",
+      ...dataOverrides
     }
   };
 }
@@ -90,6 +92,33 @@ test("single document excel export allows approved and exported statuses", async
     } finally {
       restore();
     }
+  }
+});
+
+test("single document excel export escapes formula-leading text cells", async () => {
+  const { exportService, restore } = loadExportServiceWithRepositoryStubs({
+    findDocumentById: async () => buildDocument("approved", {
+      documentNumber: "=SUM(1,1)",
+      supplierName: "+cmd",
+      recipientName: "-1+2",
+      category: "@value-with-long-text"
+    }),
+    markDocumentExported: async () => {}
+  });
+
+  try {
+    const result = await exportService.generateExcelExport("doc-id", "company-id");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(result.buffer);
+    const sheet = workbook.worksheets[0];
+
+    assert.equal(sheet.getCell("C2").value, "'=SUM(1,1)");
+    assert.equal(sheet.getCell("D2").value, "'+cmd");
+    assert.equal(sheet.getCell("F2").value, "'-1+2");
+    assert.equal(sheet.getCell("M2").value, "'@value-with-long-text");
+    assert.equal(sheet.getCell("J2").value, 10);
+  } finally {
+    restore();
   }
 });
 

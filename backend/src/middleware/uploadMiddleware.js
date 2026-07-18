@@ -4,10 +4,12 @@ const path = require("node:path");
 const multer = require("multer");
 const { config } = require("../config/env");
 const { HttpError } = require("../utils/httpError");
-const { detectMimeTypeFromFile } = require("../utils/fileSignature");
+const { detectImageDimensionsFromFile, detectMimeTypeFromFile } = require("../utils/fileSignature");
+const { scanUploadedFileForMalware } = require("../services/malwareScanService");
 
 const allowedMimeTypes = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
 const ocrMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+const maxImagePixels = 25 * 1000 * 1000;
 const extensionByMimeType = {
   "application/pdf": ".pdf",
   "image/png": ".png",
@@ -31,7 +33,7 @@ const uploadDocument = multer({
   },
   fileFilter(_req, file, callback) {
     if (!allowedMimeTypes.has(file.mimetype)) {
-      callback(new HttpError(400, "Неподдържан файлов тип. Качи PDF, JPG или PNG."));
+      callback(new HttpError(400, "Неподдържан файлов тип. Качи PDF, JPG, PNG или WebP."));
       return;
     }
 
@@ -53,6 +55,19 @@ async function validateUploadedDocumentSignature(req, _res, next) {
       next(new HttpError(400, "Невалидно файлово съдържание. Качи истински PDF, JPG, PNG или WebP файл."));
       return;
     }
+
+    if (ocrMimeTypes.has(detectedMimeType)) {
+      const dimensions = await detectImageDimensionsFromFile(req.file.path, detectedMimeType);
+      const pixels = dimensions ? dimensions.width * dimensions.height : 0;
+
+      if (!dimensions || pixels > maxImagePixels) {
+        await fs.unlink(req.file.path).catch(() => {});
+        next(new HttpError(400, "Изображението е твърде голямо или невалидно. Качи по-малък JPG, PNG или WebP файл."));
+        return;
+      }
+    }
+
+    await scanUploadedFileForMalware(req.file.path);
 
     next();
   } catch (error) {

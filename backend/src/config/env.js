@@ -20,6 +20,10 @@ function readPositiveIntEnv(name, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function readStorageBackendEnv(value) {
+  return value || "local";
+}
+
 const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   apiKey: process.env.OPENAI_API_KEY,
@@ -49,6 +53,13 @@ const config = {
   extractRateLimitMax: readPositiveIntEnv("EXTRACT_RATE_LIMIT_MAX", 10),
   exportRateLimitWindowMs: readPositiveIntEnv("EXPORT_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
   exportRateLimitMax: readPositiveIntEnv("EXPORT_RATE_LIMIT_MAX", 60),
+  malwareScanCommand: process.env.MALWARE_SCAN_COMMAND,
+  malwareScanArgs: readCsvEnv(process.env.MALWARE_SCAN_ARGS),
+  malwareScanTimeoutMs: readPositiveIntEnv("MALWARE_SCAN_TIMEOUT_MS", 30000),
+  storageBackend: readStorageBackendEnv(process.env.STORAGE_BACKEND),
+  localUploadRetentionDays: readPositiveIntEnv("LOCAL_UPLOAD_RETENTION_DAYS", 30),
+  localOutputRetentionDays: readPositiveIntEnv("LOCAL_OUTPUT_RETENTION_DAYS", 7),
+  localStorageCleanupIntervalMs: readPositiveIntEnv("LOCAL_STORAGE_CLEANUP_INTERVAL_MS", 6 * 60 * 60 * 1000),
 };
 
 function assertConfig() {
@@ -76,12 +87,54 @@ function assertAuthConfig(authConfig = config) {
   }
 }
 
-function assertRuntimeConfig() {
-  assertAuthConfig();
+function assertCorsConfig(runtimeConfig = config) {
+  const isProduction = runtimeConfig.nodeEnv === "production";
+
+  if (!isProduction) {
+    return;
+  }
+
+  if (!Array.isArray(runtimeConfig.corsOrigins) || runtimeConfig.corsOrigins.length === 0) {
+    throw new Error("CORS_ORIGINS must be set to at least one allowed origin in production.");
+  }
+}
+
+function assertMalwareScanConfig(runtimeConfig = config) {
+  const isProduction = runtimeConfig.nodeEnv === "production";
+
+  if (!isProduction) {
+    return;
+  }
+
+  if (!runtimeConfig.malwareScanCommand) {
+    throw new Error("MALWARE_SCAN_COMMAND must be configured in production.");
+  }
+}
+
+function assertStorageConfig(runtimeConfig = config) {
+  const isProduction = runtimeConfig.nodeEnv === "production";
+
+  if (!isProduction) {
+    return;
+  }
+
+  if (runtimeConfig.storageBackend !== "persistent-local") {
+    throw new Error("STORAGE_BACKEND must be set to persistent-local with a mounted private disk in production.");
+  }
+}
+
+function assertRuntimeConfig(runtimeConfig = config) {
+  assertAuthConfig(runtimeConfig);
+  assertCorsConfig(runtimeConfig);
+  assertMalwareScanConfig(runtimeConfig);
+  assertStorageConfig(runtimeConfig);
 }
 
 module.exports = {
   assertAuthConfig,
+  assertCorsConfig,
+  assertMalwareScanConfig,
+  assertStorageConfig,
   config,
   assertConfig,
   assertDatabaseConfig,

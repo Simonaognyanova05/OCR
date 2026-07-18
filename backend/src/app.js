@@ -7,9 +7,11 @@ const adminRoutes = require("./routes/adminRoutes");
 const companyRoutes = require("./routes/companyRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const { errorMiddleware } = require("./middleware/errorMiddleware");
+const { securityHeadersMiddleware } = require("./middleware/securityHeadersMiddleware");
 
 const app = express();
 
+app.use(securityHeadersMiddleware);
 app.use(
   cors({
     origin(origin, callback) {

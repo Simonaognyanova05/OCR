@@ -3,9 +3,13 @@ services:
     name: ocr-finance-backend
     env: node
     rootDir: backend
-    plan: free
+    plan: starter
     buildCommand: npm install && python -m pip install -r requirements.txt
     startCommand: npm start
+    disk:
+      name: ocr-finance-backend-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
@@ -21,6 +25,18 @@ services:
         value: 43200
       - key: CORS_ORIGINS
         sync: false
+      - key: STORAGE_BACKEND
+        value: persistent-local
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+      - key: OUTPUT_DIR
+        value: /var/data/outputs
+      - key: LOCAL_UPLOAD_RETENTION_DAYS
+        value: 30
+      - key: LOCAL_OUTPUT_RETENTION_DAYS
+        value: 7
+      - key: LOCAL_STORAGE_CLEANUP_INTERVAL_MS
+        value: 21600000
       - key: PYTHON_COMMAND
         value: python
       - key: PDF_RENDER_DPI

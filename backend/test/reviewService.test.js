@@ -74,3 +74,68 @@ test("review rules refresh generated warnings instead of preserving stale ones",
 
   assert.deepEqual(reviewed.warnings, ["manual_note"]);
 });
+
+test("review rules drop unknown document and item fields before storage", () => {
+  const reviewed = applyReviewRules(buildValidInvoice({
+    internalPath: "C:\\secret\\invoice.pdf",
+    supplier: {
+      apiKey: "do-not-store"
+    },
+    items: [
+      {
+        name: "Service",
+        quantity: "1",
+        unitPrice: "120",
+        totalPrice: "120",
+        dangerousFormula: "=cmd"
+      }
+    ],
+    warnings: ["manual_note", { nested: "value" }]
+  }));
+
+  assert.equal(reviewed.internalPath, undefined);
+  assert.equal(reviewed.supplier, undefined);
+  assert.deepEqual(reviewed.items, [
+    {
+      name: "Service",
+      quantity: 1,
+      unitPrice: 120,
+      totalPrice: 120
+    }
+  ]);
+  assert.deepEqual(reviewed.warnings, ["manual_note"]);
+});
+
+test("review rules normalize invalid shaped accounting fields into review-blocking values", () => {
+  const reviewed = applyReviewRules(buildValidInvoice({
+    documentType: "contract",
+    documentNumber: { number: "INV-100" },
+    supplierName: ["Supplier"],
+    totalAmount: "not-a-number",
+    items: [
+      {
+        name: { text: "Service" },
+        quantity: 1,
+        unitPrice: 120,
+        totalPrice: 120
+      }
+    ]
+  }));
+
+  assert.equal(reviewed.documentType, null);
+  assert.equal(reviewed.documentNumber, null);
+  assert.equal(reviewed.supplierName, null);
+  assert.equal(reviewed.totalAmount, null);
+  assert.deepEqual(reviewed.items, [
+    {
+      name: "",
+      quantity: 1,
+      unitPrice: 120,
+      totalPrice: 120
+    }
+  ]);
+  assert.equal(reviewed.needsReview, true);
+  assert.ok(reviewed.reviewReasons.includes("document_type_missing"));
+  assert.ok(reviewed.reviewReasons.includes("supplier_name_missing"));
+  assert.ok(reviewed.reviewReasons.includes("total_missing"));
+});

@@ -30,6 +30,9 @@ def render_pdf_to_images(pdf_path, output_dir, dpi=200, max_pages=5, rotation="a
     output_files = []
 
     with fitz.open(pdf_path) as document:
+        if document.needs_pass:
+            raise ValueError("encrypted_pdf_not_supported")
+
         pages_to_render = min(len(document), max_pages)
 
         for page_index in range(pages_to_render):
