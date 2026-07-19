@@ -3,7 +3,7 @@ const fs = require("node:fs/promises");
 const { config } = require("../config/env");
 const { HttpError } = require("../utils/httpError");
 const { ocrMimeTypes } = require("../middleware/uploadMiddleware");
-const { convertPdfToImages } = require("./pdfConversionService");
+const { cleanupPdfConversionOutput, convertPdfToImages } = require("./pdfConversionService");
 const { extractExpenseDocumentFromImages } = require("./ocrService");
 const { addWarning, applyReviewRules } = require("./reviewService");
 const {
@@ -57,7 +57,6 @@ function buildFilePayload(file, authContext) {
     uploaded_by: authContext.user._id,
     original_file_name: file.originalname,
     stored_file: storedFile,
-    file_url: `/uploads/${storedFile}`,
     mime_type: file.mimetype
   };
 }
@@ -131,6 +130,10 @@ async function extractDocument(file, authContext) {
       buildFailureMetadata(error)
     ).catch(() => {});
     throw error;
+  } finally {
+    if (file.mimetype === "application/pdf") {
+      await cleanupPdfConversionOutput(file.path).catch(() => {});
+    }
   }
 }
 
@@ -144,20 +147,20 @@ async function getDocumentFile(documentId, authContext) {
   const storedFile = path.basename(documentFile.storedFile || "");
 
   if (!storedFile) {
-    throw new HttpError(404, "Ð¤Ð°Ð¹Ð»ÑŠÑ‚ Ð½Ðµ Ðµ Ð½Ð°Ð¼ÐµÑ€ÐµÐ½.");
+    throw new HttpError(404, "Файлът не е намерен.");
   }
 
   const filePath = path.resolve(uploadRoot, storedFile);
   const relativePath = path.relative(uploadRoot, filePath);
 
   if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
-    throw new HttpError(400, "ÐÐµÐ²Ð°Ð»Ð¸Ð´ÐµÐ½ Ñ„Ð°Ð¹Ð».");
+    throw new HttpError(400, "Невалиден файл.");
   }
 
   try {
     await fs.access(filePath);
   } catch (_error) {
-    throw new HttpError(404, "Ð¤Ð°Ð¹Ð»ÑŠÑ‚ Ð½Ðµ Ðµ Ð½Ð°Ð¼ÐµÑ€ÐµÐ½.");
+    throw new HttpError(404, "Файлът не е намерен.");
   }
 
   return {

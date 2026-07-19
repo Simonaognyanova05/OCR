@@ -35,6 +35,8 @@ body {
 .sidebar {
   position: sticky;
   top: 0;
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   border-right: 1px solid rgba(220, 228, 239, 0.85);
   padding: 24px;
@@ -73,6 +75,46 @@ body {
   display: grid;
   gap: 8px;
   margin-top: 34px;
+}
+
+.sidebar-feedback {
+  display: grid;
+  gap: 5px;
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.sidebar-feedback span,
+.feedback-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sidebar-feedback a,
+.feedback-card a {
+  color: var(--primary);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.sidebar-feedback a:hover,
+.feedback-card a:hover {
+  text-decoration: underline;
+}
+
+.feedback-card {
+  display: grid;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fff;
 }
 
 .nav-link {
@@ -148,7 +190,7 @@ body {
 }
 
 .page-content {
-  width: min(1280px, calc(100% - 48px));
+  width: min(1520px, calc(100% - 48px));
   margin: 0 auto;
   padding: 28px 0 40px;
 }
@@ -227,7 +269,7 @@ body {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  grid-template-columns: minmax(300px, 430px) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
   padding-bottom: 4px;
@@ -707,7 +749,7 @@ body {
 }
 
 .review-fields {
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
 }
 
 label {
@@ -822,6 +864,7 @@ button:disabled {
 .field {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .field span {
@@ -832,6 +875,7 @@ button:disabled {
 
 .field input,
 .field select {
+  min-width: 0;
   width: 100%;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
@@ -932,13 +976,13 @@ pre {
   }
 }
 
-@container (max-width: 920px) {
+@container (max-width: 1080px) {
   .review-layout {
     grid-template-columns: 1fr;
   }
 
   .review-fields {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
   }
 
   .fields-panel .actions {

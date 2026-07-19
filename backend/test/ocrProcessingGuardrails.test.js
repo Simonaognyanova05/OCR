@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { config } = require("../src/config/env");
 const documentRepository = require("../src/services/documentRepository");
 const ocrService = require("../src/services/ocrService");
+const pdfConversionService = require("../src/services/pdfConversionService");
 
 function deferred() {
   let resolve;
@@ -23,6 +24,8 @@ function loadDocumentServiceWithStubs(stubs) {
     updateDocumentStatus: documentRepository.updateDocumentStatus,
     updateExtractedDocument: documentRepository.updateExtractedDocument,
     extractExpenseDocumentFromImages: ocrService.extractExpenseDocumentFromImages,
+    cleanupPdfConversionOutput: pdfConversionService.cleanupPdfConversionOutput,
+    convertPdfToImages: pdfConversionService.convertPdfToImages,
     ocrMaxConcurrentJobs: config.ocrMaxConcurrentJobs
   };
   const documentServicePath = require.resolve("../src/services/documentService");
@@ -33,6 +36,8 @@ function loadDocumentServiceWithStubs(stubs) {
   documentRepository.updateDocumentStatus = stubs.updateDocumentStatus;
   documentRepository.updateExtractedDocument = stubs.updateExtractedDocument;
   ocrService.extractExpenseDocumentFromImages = stubs.extractExpenseDocumentFromImages;
+  pdfConversionService.cleanupPdfConversionOutput = stubs.cleanupPdfConversionOutput || originals.cleanupPdfConversionOutput;
+  pdfConversionService.convertPdfToImages = stubs.convertPdfToImages || originals.convertPdfToImages;
   config.ocrMaxConcurrentJobs = stubs.ocrMaxConcurrentJobs || 1;
   delete require.cache[documentServicePath];
 
@@ -47,6 +52,8 @@ function loadDocumentServiceWithStubs(stubs) {
       documentRepository.updateDocumentStatus = originals.updateDocumentStatus;
       documentRepository.updateExtractedDocument = originals.updateExtractedDocument;
       ocrService.extractExpenseDocumentFromImages = originals.extractExpenseDocumentFromImages;
+      pdfConversionService.cleanupPdfConversionOutput = originals.cleanupPdfConversionOutput;
+      pdfConversionService.convertPdfToImages = originals.convertPdfToImages;
       config.ocrMaxConcurrentJobs = originals.ocrMaxConcurrentJobs;
       delete require.cache[documentServicePath];
     }
@@ -70,6 +77,14 @@ function buildImageFile(name) {
     path: `C:\\temp\\${name}.png`,
     originalname: `${name}.png`,
     mimetype: "image/png"
+  };
+}
+
+function buildPdfFile(name) {
+  return {
+    path: `C:\\temp\\${name}.pdf`,
+    originalname: `${name}.pdf`,
+    mimetype: "application/pdf"
   };
 }
 
@@ -141,6 +156,42 @@ test("OCR extraction concurrency guard rejects excess processing and records fai
     assert.equal(failedUpdate.extraUpdates.failureCode, "ocr_concurrency_limit");
     assert.ok(failedUpdate.extraUpdates.failedAt instanceof Date);
     assert.ok(failedUpdate.extraUpdates.processingCompletedAt instanceof Date);
+  } finally {
+    restore();
+  }
+});
+
+test("PDF extraction cleans rendered page output when OCR processing fails", async () => {
+  const cleanupCalls = [];
+  const imagePaths = ["C:\\temp\\outputs\\pdf-pages\\invoice\\invoice-page-001.png"];
+
+  const { documentService, restore } = loadDocumentServiceWithStubs({
+    countCompanyDocumentsThisMonth: async () => 0,
+    createUploadedDocument: async () => ({ id: "doc-pdf" }),
+    findPotentialDuplicateDocument: async () => null,
+    updateDocumentStatus: async () => ({}),
+    updateExtractedDocument: async () => {
+      throw new Error("update should not run");
+    },
+    convertPdfToImages: async () => imagePaths,
+    cleanupPdfConversionOutput: async (pdfPath) => {
+      cleanupCalls.push(pdfPath);
+    },
+    extractExpenseDocumentFromImages: async (paths) => {
+      assert.deepEqual(paths, imagePaths);
+      throw new Error("simulated OCR failure");
+    }
+  });
+
+  try {
+    const file = buildPdfFile("invoice");
+
+    await assert.rejects(
+      () => documentService.extractDocument(file, buildAuthContext()),
+      /simulated OCR failure/
+    );
+
+    assert.deepEqual(cleanupCalls, [file.path]);
   } finally {
     restore();
   }

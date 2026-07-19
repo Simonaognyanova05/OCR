@@ -37,6 +37,11 @@ function AppShell({ auth, health, onLogout }) {
             </NavLink>
           ))}
         </nav>
+
+        <div className="sidebar-feedback">
+          <span>Обратна връзка</span>
+          <a href="mailto:pointsmart909@gmail.com">pointsmart909@gmail.com</a>
+        </div>
       </aside>
 
       <div className="shell-main">

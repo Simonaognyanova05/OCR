@@ -371,6 +371,10 @@ function LoginPage({ authForm, authMode, error, loading, notice, onAuthFormChang
         </div>
         <h1>Премиум OCR платформа за фактури и касови бележки</h1>
         <p>Извличане, преглед, контрол, отчети и бизнес табло в един подреден работен процес.</p>
+        <div className="feedback-card">
+          <span>Обратна връзка</span>
+          <a href="mailto:pointsmart909@gmail.com">pointsmart909@gmail.com</a>
+        </div>
         <div className={health?.ok ? 'status ok' : 'status'}>
           {health?.ok ? `Backend активен: ${health.model}` : 'Backend не е активен'}
         </div>

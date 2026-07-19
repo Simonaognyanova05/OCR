@@ -56,13 +56,13 @@
   }
 }
 
-@container (max-width: 920px) {
+@container (max-width: 1080px) {
   :global(.review-layout) {
     grid-template-columns: 1fr;
   }
 
   :global(.review-fields) {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
   }
 
   :global(.fields-panel) :global(.actions) {
@@ -250,14 +250,14 @@
     text-transform: uppercase;
   }
 
-  :global(.documents-table) td:nth-child(1)::before { content: "Ãâ€ÃÂ°Ã‘â€šÃÂ°"; }
-  :global(.documents-table) td:nth-child(2)::before { content: "ÃÂ¢ÃÂ¸ÃÂ¿"; }
-  :global(.documents-table) td:nth-child(3)::before { content: "Ãâ€ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²Ã‘â€¡ÃÂ¸ÃÂº"; }
-  :global(.documents-table) td:nth-child(4)::before { content: "ÃÅ¸ÃÂ¾ÃÂ»Ã‘Æ’Ã‘â€¡ÃÂ°Ã‘â€šÃÂµÃÂ»"; }
-  :global(.documents-table) td:nth-child(5)::before { content: "ÃÂ¡Ã‘Æ’ÃÂ¼ÃÂ°"; }
-  :global(.documents-table) td:nth-child(6)::before { content: "Ãâ€Ãâ€ÃÂ¡"; }
-  :global(.documents-table) td:nth-child(7)::before { content: "ÃÂ¡Ã‘â€šÃÂ°Ã‘â€šÃ‘Æ’Ã‘Â"; }
-  :global(.documents-table) td:nth-child(8)::before { content: "ÃÅ¡ÃÂ°Ã‘â€šÃÂµÃÂ³ÃÂ¾Ã‘â‚¬ÃÂ¸Ã‘Â"; }
+  :global(.documents-table) td:nth-child(1)::before { content: "Дата"; }
+  :global(.documents-table) td:nth-child(2)::before { content: "Тип"; }
+  :global(.documents-table) td:nth-child(3)::before { content: "Доставчик"; }
+  :global(.documents-table) td:nth-child(4)::before { content: "Получател"; }
+  :global(.documents-table) td:nth-child(5)::before { content: "Сума"; }
+  :global(.documents-table) td:nth-child(6)::before { content: "ДДС"; }
+  :global(.documents-table) td:nth-child(7)::before { content: "Статус"; }
+  :global(.documents-table) td:nth-child(8)::before { content: "Категория"; }
 
   :global(.empty-cell) {
     display: block;

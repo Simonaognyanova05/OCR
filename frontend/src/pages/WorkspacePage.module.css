@@ -2,7 +2,7 @@
 
 :global(.workspace) {
   display: grid;
-  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  grid-template-columns: minmax(300px, 430px) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
   padding-bottom: 4px;
