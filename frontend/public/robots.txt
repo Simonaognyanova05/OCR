@@ -6,4 +6,4 @@ Disallow: /workspace
 Disallow: /company
 Disallow: /admin
 
-Sitemap: https://ocr-finance.onrender.com/sitemap.xml
+Sitemap: https://centche.online/sitemap.xml
