@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const publicDir = path.resolve(__dirname, '..', 'public');
-const siteUrl = (process.env.REACT_APP_SITE_URL || 'https://ocr-finance.onrender.com').replace(/\/$/, '');
+const siteUrl = (process.env.REACT_APP_SITE_URL || 'https://centche.online').replace(/\/$/, '');
 const today = new Date().toISOString().slice(0, 10);
 
 const routes = [
