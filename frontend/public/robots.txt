@@ -1,3 +1,9 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /login
+Disallow: /documents
+Disallow: /workspace
+Disallow: /company
+Disallow: /admin
+
+Sitemap: https://ocr-finance.onrender.com/sitemap.xml

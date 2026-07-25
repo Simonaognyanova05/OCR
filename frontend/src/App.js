@@ -1,8 +1,9 @@
 import './App.css';
 import { useCallback, useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
 import AppShell from './components/AppShell';
 import AuthPanel from './components/AuthPanel';
+import PageMetadata from './components/PageMetadata';
 import { useAuth } from './hooks/useAuth';
 import { useDashboard } from './hooks/useDashboard';
 import { initialDocumentFilters, useDocuments } from './hooks/useDocuments';
@@ -11,6 +12,7 @@ import AdminPage from './pages/AdminPage';
 import CompanyPage from './pages/CompanyPage';
 import DashboardPage from './pages/DashboardPage';
 import DocumentsPage from './pages/DocumentsPage';
+import MarketingPage from './pages/MarketingPage';
 import WorkspacePage from './pages/WorkspacePage';
 import { login, register } from './services/authService';
 import { getCompanyProfile, requestSubscriptionPlan, updateCompany } from './services/companyService';
@@ -361,6 +363,12 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
 function LoginPage({ authForm, authMode, error, loading, notice, onAuthFormChange, onAuthModeChange, onSubmit, health }) {
   return (
     <main className="login-page">
+      <PageMetadata
+        canonicalPath="/login"
+        description="Вход и регистрация в OCR Finance за обработка на фактури и касови бележки."
+        noIndex
+        title="Вход | OCR Finance"
+      />
       <section className="login-hero">
         <div className="brand">
           <div className="brand-mark">O</div>
@@ -394,6 +402,7 @@ function LoginPage({ authForm, authMode, error, loading, notice, onAuthFormChang
 }
 
 function AppContent() {
+  const [searchParams] = useSearchParams();
   const health = useHealth();
   const {
     auth,
@@ -412,6 +421,12 @@ function AppContent() {
     setError('');
     setNotice('');
   }
+
+  useEffect(() => {
+    if (searchParams.get('mode') === 'register') {
+      setAuthMode('register');
+    }
+  }, [searchParams]);
 
   async function handleAuthSubmit(event) {
     event.preventDefault();
@@ -434,17 +449,27 @@ function AppContent() {
 
   if (!auth) {
     return (
-      <LoginPage
-        authForm={authForm}
-        authMode={authMode}
-        error={error}
-        health={health}
-        loading={loading}
-        notice={notice}
-        onAuthFormChange={setAuthForm}
-        onAuthModeChange={setAuthMode}
-        onSubmit={handleAuthSubmit}
-      />
+      <Routes>
+        <Route index element={<Navigate to="/ocr-fakturi-kasovi-belezhki" replace />} />
+        <Route path="ocr-fakturi-kasovi-belezhki" element={<MarketingPage />} />
+        <Route
+          path="login"
+          element={(
+            <LoginPage
+              authForm={authForm}
+              authMode={authMode}
+              error={error}
+              health={health}
+              loading={loading}
+              notice={notice}
+              onAuthFormChange={setAuthForm}
+              onAuthModeChange={setAuthMode}
+              onSubmit={handleAuthSubmit}
+            />
+          )}
+        />
+        <Route path="*" element={<Navigate to="/ocr-fakturi-kasovi-belezhki" replace />} />
+      </Routes>
     );
   }
 
