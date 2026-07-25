@@ -1,0 +1,403 @@
+.page {
+  min-height: 100vh;
+  color: #0f172a;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(29, 78, 216, 0.14), transparent 34rem),
+    linear-gradient(180deg, #ffffff 0%, #f6f8fc 48%, #eef3f8 100%);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 18px 0;
+  background: rgba(248, 250, 252, 0.92);
+  backdrop-filter: blur(16px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand strong,
+.brand small {
+  display: block;
+}
+
+.brand small {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.header nav {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.header nav a {
+  color: #475569;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.header nav a:hover {
+  color: #1d4ed8;
+}
+
+.header .loginLink {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: #0f172a;
+  background: #fff;
+}
+
+.hero,
+.section,
+.cta,
+.footer {
+  width: min(1180px, calc(100% - 40px));
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(330px, 0.72fr);
+  gap: 54px;
+  align-items: center;
+  min-height: 650px;
+  padding: 62px 0 86px;
+}
+
+.heroText h1 {
+  max-width: 760px;
+  margin: 0;
+  font-size: 58px;
+  line-height: 1.04;
+  letter-spacing: 0;
+}
+
+.heroText p {
+  max-width: 720px;
+  margin: 22px 0 0;
+  color: #475569;
+  font-size: 20px;
+  line-height: 1.65;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  border-radius: 8px;
+  padding: 0 22px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.primaryAction {
+  color: #fff;
+  background: linear-gradient(135deg, #1d4ed8, #143b9f);
+  box-shadow: 0 14px 30px rgba(29, 78, 216, 0.24);
+}
+
+.secondaryAction {
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  background: #fff;
+}
+
+.formats {
+  display: block;
+  margin-top: 18px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.preview {
+  min-width: 0;
+}
+
+.paper {
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  padding: 24px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.14);
+}
+
+.paperHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 18px;
+}
+
+.paperHeader span {
+  font-weight: 800;
+}
+
+.paperHeader strong {
+  border-radius: 999px;
+  padding: 5px 10px;
+  color: #047857;
+  background: #ecfdf5;
+  font-size: 12px;
+}
+
+.paper dl {
+  display: grid;
+  margin: 12px 0 0;
+}
+
+.paper dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 14px 0;
+}
+
+.paper dt {
+  color: #64748b;
+}
+
+.paper dd {
+  margin: 0;
+  font-weight: 800;
+  text-align: right;
+}
+
+.section {
+  padding: 84px 0;
+}
+
+.section h2,
+.cta h2 {
+  max-width: 780px;
+  margin: 0;
+  font-size: 42px;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.benefitGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 36px;
+}
+
+.benefitGrid article {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 22px;
+  background: #fff;
+}
+
+.benefitGrid h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.benefitGrid p,
+.process p,
+.faq p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.65;
+}
+
+.process {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 56px;
+}
+
+.process > div > p:last-child {
+  margin-top: 18px;
+  font-size: 17px;
+}
+
+.process ol {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.process li {
+  display: grid;
+  gap: 6px;
+  border-left: 3px solid #bfdbfe;
+  padding: 16px 18px 16px 24px;
+  background: #fff;
+}
+
+.process li strong {
+  font-size: 18px;
+}
+
+.process li span {
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.faq {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 36px;
+}
+
+.faq details {
+  margin: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  background: #fff;
+}
+
+.faq summary {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.faq p {
+  margin-top: 14px;
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  margin-top: 36px;
+  margin-bottom: 80px;
+  border-radius: 8px;
+  padding: 42px;
+  color: #fff;
+  background: #0f172a;
+}
+
+.cta .eyebrow {
+  color: #93c5fd;
+}
+
+.cta .primaryAction {
+  flex: 0 0 auto;
+  background: #2563eb;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid #e2e8f0;
+  padding: 28px 0 40px;
+  color: #64748b;
+}
+
+.footer a {
+  color: #1d4ed8;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 940px) {
+  .header nav a:not(.loginLink) {
+    display: none;
+  }
+
+  .hero,
+  .process {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    min-height: auto;
+    padding-top: 48px;
+  }
+
+  .heroText h1 {
+    font-size: 44px;
+  }
+
+  .benefitGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .header,
+  .hero,
+  .section,
+  .cta,
+  .footer {
+    width: min(100% - 24px, 100%);
+  }
+
+  .brand small {
+    display: none;
+  }
+
+  .heroText h1 {
+    font-size: 36px;
+  }
+
+  .heroText p {
+    font-size: 17px;
+  }
+
+  .section h2,
+  .cta h2 {
+    font-size: 30px;
+  }
+
+  .benefitGrid,
+  .faq {
+    grid-template-columns: 1fr;
+  }
+
+  .cta,
+  .footer {
+    display: grid;
+  }
+
+  .cta {
+    padding: 24px;
+  }
+}
