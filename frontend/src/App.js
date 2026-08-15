@@ -13,6 +13,7 @@ import CompanyPage from './pages/CompanyPage';
 import DashboardPage from './pages/DashboardPage';
 import DocumentsPage from './pages/DocumentsPage';
 import MarketingPage from './pages/MarketingPage';
+import PublicDemoPage from './pages/PublicDemoPage';
 import WorkspacePage from './pages/WorkspacePage';
 import { login, register } from './services/authService';
 import { getCompanyProfile, requestSubscriptionPlan, updateCompany } from './services/companyService';
@@ -452,6 +453,7 @@ function AppContent() {
       <Routes>
         <Route index element={<Navigate to="/ocr-fakturi-kasovi-belezhki" replace />} />
         <Route path="ocr-fakturi-kasovi-belezhki" element={<MarketingPage />} />
+        <Route path="demo" element={<PublicDemoPage />} />
         <Route
           path="login"
           element={(
@@ -468,7 +470,7 @@ function AppContent() {
             />
           )}
         />
-        <Route path="*" element={<Navigate to="/ocr-fakturi-kasovi-belezhki" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   }

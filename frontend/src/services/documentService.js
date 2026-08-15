@@ -26,6 +26,12 @@ export function extractDocument(file, token) {
   return sendForm('/api/documents/extract', formData, token);
 }
 
+export function extractPublicDemoDocument(file) {
+  const formData = new FormData();
+  formData.append('document', file);
+  return sendForm('/api/public/demo/extract', formData);
+}
+
 export function saveDocumentReview(documentId, data, token) {
   return sendJson(`/api/documents/${documentId}/review`, 'PUT', { data }, token);
 }

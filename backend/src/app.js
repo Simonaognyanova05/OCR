@@ -6,6 +6,7 @@ const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const companyRoutes = require("./routes/companyRoutes");
 const documentRoutes = require("./routes/documentRoutes");
+const publicDemoRoutes = require("./routes/publicDemoRoutes");
 const { errorMiddleware } = require("./middleware/errorMiddleware");
 const { securityHeadersMiddleware } = require("./middleware/securityHeadersMiddleware");
 
@@ -27,6 +28,7 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 
 app.use(healthRoutes);
+app.use("/api", publicDemoRoutes);
 app.use("/api", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", companyRoutes);

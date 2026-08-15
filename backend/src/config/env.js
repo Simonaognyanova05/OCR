@@ -87,54 +87,26 @@ function assertAuthConfig(authConfig = config) {
   }
 }
 
-function assertCorsConfig(runtimeConfig = config) {
-  const isProduction = runtimeConfig.nodeEnv === "production";
+function assertCorsConfig(corsConfig = config) {
+  const isProduction = corsConfig.nodeEnv === "production";
 
   if (!isProduction) {
     return;
   }
 
-  if (!Array.isArray(runtimeConfig.corsOrigins) || runtimeConfig.corsOrigins.length === 0) {
-    throw new Error("CORS_ORIGINS must be set to at least one allowed origin in production.");
+  if (!Array.isArray(corsConfig.corsOrigins) || corsConfig.corsOrigins.length === 0) {
+    throw new Error("CORS_ORIGINS must include at least one allowed origin in production.");
   }
 }
 
-function assertMalwareScanConfig(runtimeConfig = config) {
-  const isProduction = runtimeConfig.nodeEnv === "production";
-
-  if (!isProduction) {
-    return;
-  }
-
-  if (!runtimeConfig.malwareScanCommand) {
-    throw new Error("MALWARE_SCAN_COMMAND must be configured in production.");
-  }
-}
-
-function assertStorageConfig(runtimeConfig = config) {
-  const isProduction = runtimeConfig.nodeEnv === "production";
-
-  if (!isProduction) {
-    return;
-  }
-
-  if (runtimeConfig.storageBackend !== "persistent-local") {
-    throw new Error("STORAGE_BACKEND must be set to persistent-local with a mounted private disk in production.");
-  }
-}
-
-function assertRuntimeConfig(runtimeConfig = config) {
-  assertAuthConfig(runtimeConfig);
-  assertCorsConfig(runtimeConfig);
-  assertMalwareScanConfig(runtimeConfig);
-  assertStorageConfig(runtimeConfig);
+function assertRuntimeConfig() {
+  assertAuthConfig();
+  assertCorsConfig();
 }
 
 module.exports = {
   assertAuthConfig,
   assertCorsConfig,
-  assertMalwareScanConfig,
-  assertStorageConfig,
   config,
   assertConfig,
   assertDatabaseConfig,

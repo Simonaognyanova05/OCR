@@ -6,7 +6,7 @@ const path = require("node:path");
 const app = require("../src/app");
 const { config } = require("../src/config/env");
 const Document = require("../src/models/Document");
-const { findDocumentFileById } = require("../src/services/documentRepository");
+const { createUploadedDocument, findDocumentFileById } = require("../src/services/documentRepository");
 
 function request(server, pathname, headers = {}) {
   const { port } = server.address();
@@ -64,6 +64,46 @@ test("document file endpoint denies anonymous requests before file access", asyn
     const response = await request(server, "/api/documents/507f1f77bcf86cd799439011/file");
     assert.equal(response.statusCode, 401);
   });
+});
+
+test("new uploaded documents do not persist legacy public /uploads URLs", async () => {
+  const originalCreate = Document.create;
+  let capturedPayload;
+
+  Document.create = async (payload) => {
+    capturedPayload = payload;
+    return {
+      _id: "507f1f77bcf86cd799439011",
+      companyId: payload.companyId,
+      uploadedBy: payload.uploadedBy,
+      originalName: payload.originalName,
+      originalFileName: payload.originalFileName,
+      storedFile: payload.storedFile,
+      fileUrl: payload.fileUrl,
+      mimeType: payload.mimeType,
+      status: payload.status,
+      documentType: payload.documentType,
+      data: payload.data,
+      createdAt: new Date("2026-07-14T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-14T00:00:00.000Z")
+    };
+  };
+
+  try {
+    const result = await createUploadedDocument({
+      company_id: "507f1f77bcf86cd799439012",
+      uploaded_by: "507f1f77bcf86cd799439013",
+      original_file_name: "invoice.pdf",
+      stored_file: "stored.pdf",
+      mime_type: "application/pdf"
+    });
+
+    assert.equal(capturedPayload.fileUrl, null);
+    assert.equal(result.file_url, "/api/documents/507f1f77bcf86cd799439011/file");
+    assert.doesNotMatch(JSON.stringify(capturedPayload), /\/uploads\//);
+  } finally {
+    Document.create = originalCreate;
+  }
 });
 
 test("document file repository lookup is company scoped", async () => {

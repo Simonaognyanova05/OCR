@@ -91,6 +91,12 @@ async function getOcrImagePaths(file) {
   throw new HttpError(400, "OCR обработката поддържа PDF, JPG и PNG.");
 }
 
+async function cleanupFiles(filePaths) {
+  await Promise.all(
+    [...new Set(filePaths.filter(Boolean))].map((filePath) => fs.unlink(filePath).catch(() => {}))
+  );
+}
+
 async function extractDocument(file, authContext) {
   if (!file) {
     throw new HttpError(400, "Липсва файл. Изпрати multipart/form-data с поле document.");
@@ -134,6 +140,34 @@ async function extractDocument(file, authContext) {
     if (file.mimetype === "application/pdf") {
       await cleanupPdfConversionOutput(file.path).catch(() => {});
     }
+  }
+}
+
+async function extractPublicDemoDocument(file) {
+  if (!file) {
+    throw new HttpError(400, "Липсва файл. Изпрати multipart/form-data с поле document.");
+  }
+
+  const cleanupPaths = [file.path];
+
+  try {
+    const extracted = await runWithExtractionSlot(async () => {
+      const imagePaths = await getOcrImagePaths(file);
+      cleanupPaths.push(...imagePaths);
+      return applyReviewRules(await extractExpenseDocumentFromImages(imagePaths));
+    });
+
+    return {
+      id: null,
+      status: "demo",
+      mime_type: file.mimetype,
+      original_file_name: file.originalname,
+      model: config.model,
+      extracted_at: new Date().toISOString(),
+      data: extracted
+    };
+  } finally {
+    await cleanupFiles(cleanupPaths);
   }
 }
 
@@ -287,6 +321,7 @@ async function approveDocument(documentId, data, authContext) {
 module.exports = {
   approveDocument,
   extractDocument,
+  extractPublicDemoDocument,
   getDashboard,
   getDocument,
   getDocumentFile,
