@@ -10,6 +10,7 @@ function ReviewPanel({
   onApprove,
   onSaveReview,
   onUpdateDraft,
+  publicMode = false,
   result,
   saving,
   token,
@@ -24,7 +25,11 @@ function ReviewPanel({
         <div className="review-layout">
           <section className="preview-panel">
             <h3>Оригинален документ</h3>
-            <DocumentPreview result={result} token={token} />
+            {publicMode ? (
+              <p className="empty">В публичния тест файлът се обработва временно и не се съхранява за преглед.</p>
+            ) : (
+              <DocumentPreview result={result} token={token} />
+            )}
           </section>
 
           <section className="fields-panel">
@@ -63,10 +68,12 @@ function ReviewPanel({
               <Field label="Валута" path="currency" draft={draft} onChange={onUpdateDraft} />
             </div>
 
-            <div className="actions">
-              <button type="button" className="secondary-button" onClick={onSaveReview} disabled={saving}>Запази корекциите</button>
-              <button type="button" onClick={onApprove} disabled={saving}>Approve document</button>
-            </div>
+            {!publicMode && (
+              <div className="actions">
+                <button type="button" className="secondary-button" onClick={onSaveReview} disabled={saving}>Запази корекциите</button>
+                <button type="button" onClick={onApprove} disabled={saving}>Approve document</button>
+              </div>
+            )}
 
             <details>
               <summary>JSON резултат</summary>

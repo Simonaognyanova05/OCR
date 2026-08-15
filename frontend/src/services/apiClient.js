@@ -36,11 +36,16 @@ export async function sendJson(path, method, body, token) {
 }
 
 export async function sendForm(path, formData, token) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const options = {
     method: 'POST',
-    headers: authHeaders(token),
     body: formData,
-  });
+  };
+
+  if (token) {
+    options.headers = authHeaders(token);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, options);
   return parseJsonResponse(response);
 }
 
