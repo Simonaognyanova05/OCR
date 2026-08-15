@@ -64,11 +64,11 @@ function ContractsPage({ auth }) {
       </section>
 
       <section className="workspace">
-        <section className="documents-panel">
+        <section className="documents-panel contract-search-panel">
           <div className="panel-heading">
             <h2>Търсене</h2>
           </div>
-          <div className="filters-grid">
+          <div className="contract-filter-bar">
             <label className="field">
               <span>Тип договор</span>
               <select value={contractFilters.contractType} onChange={(event) => setContractFilters({ ...contractFilters, contractType: event.target.value })}>
@@ -86,10 +86,10 @@ function ContractsPage({ auth }) {
                 <option value="failed">неуспешен</option>
               </select>
             </label>
-          </div>
-          <div className="actions">
+          <div className="actions contract-filter-actions">
             <button type="button" className="secondary-button" onClick={clearFilters}>Изчисти филтрите</button>
             <button type="button" onClick={() => loadContracts()}>Филтрирай</button>
+          </div>
           </div>
           {error && <p className="error">{error}</p>}
         </section>

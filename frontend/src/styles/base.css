@@ -897,6 +897,52 @@ button:disabled {
   margin-bottom: 16px;
 }
 
+.contract-search-panel {
+  align-self: start;
+  padding: 18px;
+}
+
+.contract-search-panel .panel-heading {
+  margin-bottom: 14px;
+}
+
+.contract-search-panel .panel-heading h2 {
+  font-size: 22px;
+}
+
+.contract-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.contract-filter-bar .field span {
+  min-height: auto;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.contract-filter-bar .field select {
+  height: 42px;
+  padding: 8px 34px 8px 12px;
+}
+
+.contract-filter-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 2px 0 0;
+}
+
+.contract-filter-actions button {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
 .fields-panel .actions button {
   min-width: min(180px, 100%);
 }
