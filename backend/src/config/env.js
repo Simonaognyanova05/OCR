@@ -20,6 +20,10 @@ function readPositiveIntEnv(name, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function readStorageBackendEnv(value) {
+  return value || "local";
+}
+
 const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   apiKey: process.env.OPENAI_API_KEY,
@@ -41,6 +45,21 @@ const config = {
   pdfConversionTimeoutMs: readPositiveIntEnv("PDF_CONVERSION_TIMEOUT_MS", 30000),
   ocrRequestTimeoutMs: readPositiveIntEnv("OCR_REQUEST_TIMEOUT_MS", 60000),
   ocrMaxConcurrentJobs: readPositiveIntEnv("OCR_MAX_CONCURRENT_JOBS", 2),
+  authRateLimitWindowMs: readPositiveIntEnv("AUTH_RATE_LIMIT_WINDOW_MS", 15 * 60 * 1000),
+  authRateLimitMax: readPositiveIntEnv("AUTH_RATE_LIMIT_MAX", 20),
+  uploadRateLimitWindowMs: readPositiveIntEnv("UPLOAD_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
+  uploadRateLimitMax: readPositiveIntEnv("UPLOAD_RATE_LIMIT_MAX", 30),
+  extractRateLimitWindowMs: readPositiveIntEnv("EXTRACT_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
+  extractRateLimitMax: readPositiveIntEnv("EXTRACT_RATE_LIMIT_MAX", 10),
+  exportRateLimitWindowMs: readPositiveIntEnv("EXPORT_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
+  exportRateLimitMax: readPositiveIntEnv("EXPORT_RATE_LIMIT_MAX", 60),
+  malwareScanCommand: process.env.MALWARE_SCAN_COMMAND,
+  malwareScanArgs: readCsvEnv(process.env.MALWARE_SCAN_ARGS),
+  malwareScanTimeoutMs: readPositiveIntEnv("MALWARE_SCAN_TIMEOUT_MS", 30000),
+  storageBackend: readStorageBackendEnv(process.env.STORAGE_BACKEND),
+  localUploadRetentionDays: readPositiveIntEnv("LOCAL_UPLOAD_RETENTION_DAYS", 30),
+  localOutputRetentionDays: readPositiveIntEnv("LOCAL_OUTPUT_RETENTION_DAYS", 7),
+  localStorageCleanupIntervalMs: readPositiveIntEnv("LOCAL_STORAGE_CLEANUP_INTERVAL_MS", 6 * 60 * 60 * 1000),
 };
 
 function assertConfig() {

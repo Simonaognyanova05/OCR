@@ -28,7 +28,7 @@ const exportableStatuses = new Set(["approved", "exported"]);
 
 function assertDocumentExportable(document) {
   if (!exportableStatuses.has(document.status)) {
-    throw new HttpError(409, "Ð”Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚ÑŠÑ‚ Ñ‚Ñ€ÑÐ±Ð²Ð° Ð´Ð° Ð±ÑŠÐ´Ðµ Ð¾Ð´Ð¾Ð±Ñ€ÐµÐ½ Ð¿Ñ€ÐµÐ´Ð¸ ÐµÐºÑÐ¿Ð¾Ñ€Ñ‚.");
+    throw new HttpError(409, "Документът трябва да бъде одобрен преди експорт.");
   }
 }
 
@@ -142,7 +142,13 @@ function buildAccountingExportRow(document) {
 function formatAccountingCellValue(value) {
   if (value === null || value === undefined) return "";
   if (typeof value === "number") return value;
-  return cleanDisplayText(value);
+  const text = cleanDisplayText(value);
+
+  if (/^[=+\-@]/.test(text)) {
+    return `'${text}`;
+  }
+
+  return text;
 }
 
 function toNumber(value) {

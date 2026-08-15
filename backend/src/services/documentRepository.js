@@ -2,6 +2,18 @@ const Document = require("../models/Document");
 const { HttpError } = require("../utils/httpError");
 const { sanitizeDocumentDataForStorage } = require("../utils/documentSanitizer");
 
+const documentStatuses = new Set(["uploaded", "processing", "needs_review", "approved", "exported", "failed"]);
+const documentTypes = new Set(["invoice", "receipt", "other"]);
+const currencies = new Set(["BGN", "EUR", "USD"]);
+const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
+const maxTextFilterLength = 80;
+
+function assertTenantScope(companyId) {
+  if (companyId === undefined || companyId === null || companyId === "") {
+    throw new Error("Tenant companyId is required for document repository access.");
+  }
+}
+
 function toApiDocument(document) {
   return {
     id: document._id.toString(),
@@ -9,8 +21,7 @@ function toApiDocument(document) {
     uploaded_by: document.uploadedBy.toString(),
     original_name: document.originalName,
     original_file_name: document.originalFileName || document.originalName,
-    stored_file: document.storedFile,
-    file_url: `/api/documents/${document._id.toString()}/file`,
+    file_endpoint: buildProtectedFileEndpoint(document._id),
     mime_type: document.mimeType,
     model: document.model,
     status: document.status,
@@ -49,17 +60,17 @@ function toApiDocumentListItem(document) {
 
 function addRegexFilter(query, field, value) {
   if (value) {
-    query[field] = { $regex: String(value).trim(), $options: "i" };
+    query[field] = { $regex: escapeRegex(value), $options: "i" };
   }
 }
 
-function buildDocumentListQuery(companyId, filters = {}) {
+function buildDocumentListQuery(companyId, filters) {
   const query = { companyId };
 
   if (filters.status) query.status = filters.status;
   if (filters.documentType) query.documentType = filters.documentType;
   if (filters.currency) query["data.currency"] = filters.currency;
-  if (filters.category) query["data.category"] = { $regex: String(filters.category).trim(), $options: "i" };
+  addRegexFilter(query, "data.category", filters.category);
 
   addRegexFilter(query, "data.supplierName", filters.supplier);
   addRegexFilter(query, "data.recipientName", filters.recipient);
@@ -70,17 +81,17 @@ function buildDocumentListQuery(companyId, filters = {}) {
     if (filters.dateTo) query["data.issueDate"].$lte = filters.dateTo;
   }
 
-  if (filters.amountMin || filters.amountMax) {
+  if (filters.amountMin !== undefined || filters.amountMax !== undefined) {
     query["data.totalAmount"] = {};
-    if (filters.amountMin) query["data.totalAmount"].$gte = Number(filters.amountMin);
-    if (filters.amountMax) query["data.totalAmount"].$lte = Number(filters.amountMax);
+    if (filters.amountMin !== undefined) query["data.totalAmount"].$gte = filters.amountMin;
+    if (filters.amountMax !== undefined) query["data.totalAmount"].$lte = filters.amountMax;
   }
 
   return query;
 }
 
 async function createUploadedDocument(payload) {
-  const document = await Document.create({
+  const document = new Document({
     companyId: payload.company_id,
     uploadedBy: payload.uploaded_by,
     originalName: payload.original_file_name,
@@ -93,10 +104,15 @@ async function createUploadedDocument(payload) {
     data: null
   });
 
+  document.fileUrl = buildProtectedFileEndpoint(document._id);
+  await document.save();
+
   return toApiDocument(document);
 }
 
 async function countCompanyDocumentsThisMonth(companyId) {
+  assertTenantScope(companyId);
+
   const startOfMonth = new Date();
   startOfMonth.setUTCDate(1);
   startOfMonth.setUTCHours(0, 0, 0, 0);
@@ -108,9 +124,11 @@ async function countCompanyDocumentsThisMonth(companyId) {
 }
 
 async function listCompanyDocuments(companyId, filters) {
-  const limit = Math.min(Number(filters.limit || 50), 100);
-  const page = Math.max(Number(filters.page || 1), 1);
-  const query = buildDocumentListQuery(companyId, filters);
+  assertTenantScope(companyId);
+
+  const normalizedFilters = normalizeDocumentListFilters(filters);
+  const { limit, page } = normalizedFilters;
+  const query = buildDocumentListQuery(companyId, normalizedFilters);
   const [documents, total] = await Promise.all([
     Document.find(query)
       .sort({ createdAt: -1 })
@@ -131,6 +149,8 @@ async function listCompanyDocuments(companyId, filters) {
 }
 
 async function listCompanyDocumentsForMonthlyReport(companyId, { dateFrom, dateTo }) {
+  assertTenantScope(companyId);
+
   return Document.find({
     companyId,
     status: { $in: ["approved", "exported"] },
@@ -144,6 +164,8 @@ async function listCompanyDocumentsForMonthlyReport(companyId, { dateFrom, dateT
 }
 
 async function getCompanyDashboardDocuments(companyId, { dateFrom, dateTo }) {
+  assertTenantScope(companyId);
+
   return Document.find({
     companyId,
     status: { $in: ["approved", "exported"] },
@@ -157,6 +179,8 @@ async function getCompanyDashboardDocuments(companyId, { dateFrom, dateTo }) {
 }
 
 async function findPotentialDuplicateDocument(companyId, documentData, excludeDocumentId) {
+  assertTenantScope(companyId);
+
   if (!documentData?.documentNumber || !documentData?.supplierName || documentData.totalAmount === null || documentData.totalAmount === undefined) {
     return null;
   }
@@ -179,10 +203,9 @@ async function findPotentialDuplicateDocument(companyId, documentData, excludeDo
 }
 
 async function findDocumentById(documentId, companyId) {
-  const query = { _id: documentId };
-  if (companyId) query.companyId = companyId;
+  assertTenantScope(companyId);
 
-  const document = await Document.findOne(query);
+  const document = await Document.findOne({ _id: documentId, companyId });
   if (!document) {
     throw new HttpError(404, "Документът не е намерен.");
   }
@@ -191,11 +214,13 @@ async function findDocumentById(documentId, companyId) {
 }
 
 async function findDocumentFileById(documentId, companyId) {
+  assertTenantScope(companyId);
+
   const document = await Document.findOne({ _id: documentId, companyId })
     .select("originalName originalFileName storedFile mimeType");
 
   if (!document) {
-    throw new HttpError(404, "Ð”Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚ÑŠÑ‚ Ð½Ðµ Ðµ Ð½Ð°Ð¼ÐµÑ€ÐµÐ½.");
+    throw new HttpError(404, "Документът не е намерен.");
   }
 
   return {
@@ -206,6 +231,8 @@ async function findDocumentFileById(documentId, companyId) {
 }
 
 async function updateDocumentStatus(documentId, companyId, status, extraUpdates = {}) {
+  assertTenantScope(companyId);
+
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId },
     { $set: { status, ...extraUpdates } },
@@ -220,6 +247,8 @@ async function updateDocumentStatus(documentId, companyId, status, extraUpdates 
 }
 
 async function updateExtractedDocument(documentId, companyId, payload) {
+  assertTenantScope(companyId);
+
   const sanitizedData = sanitizeDocumentDataForStorage(payload.data);
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId },
@@ -247,6 +276,8 @@ async function updateExtractedDocument(documentId, companyId, payload) {
 }
 
 async function updateReviewedDocument(documentId, reviewedData, companyId) {
+  assertTenantScope(companyId);
+
   const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId },
@@ -269,9 +300,11 @@ async function updateReviewedDocument(documentId, reviewedData, companyId) {
 }
 
 async function approveReviewedDocument(documentId, reviewedData, companyId) {
+  assertTenantScope(companyId);
+
   const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
   const document = await Document.findOneAndUpdate(
-    { _id: documentId, companyId },
+    { _id: documentId, companyId, status: "needs_review" },
     {
       $set: {
         status: "approved",
@@ -288,6 +321,11 @@ async function approveReviewedDocument(documentId, reviewedData, companyId) {
   );
 
   if (!document) {
+    const existingDocument = await Document.exists({ _id: documentId, companyId });
+    if (existingDocument) {
+      throw new HttpError(409, "Документът трябва да бъде в статус за преглед преди одобрение.");
+    }
+
     throw new HttpError(404, "Документът не е намерен.");
   }
 
@@ -295,9 +333,10 @@ async function approveReviewedDocument(documentId, reviewedData, companyId) {
 }
 
 async function markDocumentExported(documentId, exportType, companyId) {
+  assertTenantScope(companyId);
+
   const exportedAt = new Date();
-  const query = { _id: documentId, status: { $in: ["approved", "exported"] } };
-  if (companyId) query.companyId = companyId;
+  const query = { _id: documentId, status: { $in: ["approved", "exported"] }, companyId };
 
   const document = await Document.findOneAndUpdate(
     query,

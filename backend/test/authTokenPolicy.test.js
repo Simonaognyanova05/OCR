@@ -2,7 +2,18 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
 const { signToken, verifyToken } = require("../src/utils/auth");
+<<<<<<< HEAD
 const { assertAuthConfig, assertCorsConfig, config } = require("../src/config/env");
+=======
+const {
+  assertAuthConfig,
+  assertCorsConfig,
+  assertMalwareScanConfig,
+  assertStorageConfig,
+  assertRuntimeConfig,
+  config
+} = require("../src/config/env");
+>>>>>>> 46febaf29734327c5c292619503c9a32099eeef2
 
 function signLegacyToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
@@ -57,9 +68,22 @@ test("production rejects empty CORS origins", () => {
     /CORS_ORIGINS/
   );
   assert.throws(
+<<<<<<< HEAD
     () => assertCorsConfig({ nodeEnv: "production" }),
     /CORS_ORIGINS/
   );
+=======
+    () => assertRuntimeConfig({
+      nodeEnv: "production",
+      authSecret: "a-strong-production-secret-at-least-32-chars",
+      corsOrigins: []
+    }),
+    /CORS_ORIGINS/
+  );
+});
+
+test("production accepts configured CORS origins and development can be empty", () => {
+>>>>>>> 46febaf29734327c5c292619503c9a32099eeef2
   assert.doesNotThrow(() => assertCorsConfig({
     nodeEnv: "production",
     corsOrigins: ["https://app.example.com"]
@@ -68,4 +92,59 @@ test("production rejects empty CORS origins", () => {
     nodeEnv: "development",
     corsOrigins: []
   }));
+<<<<<<< HEAD
+=======
+  assert.doesNotThrow(() => assertRuntimeConfig({
+    nodeEnv: "production",
+    authSecret: "a-strong-production-secret-at-least-32-chars",
+    corsOrigins: ["https://app.example.com"],
+    malwareScanCommand: "clamscan",
+    storageBackend: "persistent-local"
+  }));
+});
+
+test("production requires malware scanning command and development can skip it", () => {
+  assert.throws(
+    () => assertMalwareScanConfig({ nodeEnv: "production", malwareScanCommand: "" }),
+    /MALWARE_SCAN_COMMAND/
+  );
+  assert.throws(
+    () => assertRuntimeConfig({
+      nodeEnv: "production",
+      authSecret: "a-strong-production-secret-at-least-32-chars",
+      corsOrigins: ["https://app.example.com"],
+      malwareScanCommand: ""
+    }),
+    /MALWARE_SCAN_COMMAND/
+  );
+  assert.doesNotThrow(() => assertMalwareScanConfig({
+    nodeEnv: "development",
+    malwareScanCommand: ""
+  }));
+});
+
+test("production requires explicit persistent local storage backend", () => {
+  assert.throws(
+    () => assertStorageConfig({ nodeEnv: "production", storageBackend: "local" }),
+    /STORAGE_BACKEND/
+  );
+  assert.throws(
+    () => assertRuntimeConfig({
+      nodeEnv: "production",
+      authSecret: "a-strong-production-secret-at-least-32-chars",
+      corsOrigins: ["https://app.example.com"],
+      malwareScanCommand: "clamscan",
+      storageBackend: "local"
+    }),
+    /STORAGE_BACKEND/
+  );
+  assert.doesNotThrow(() => assertStorageConfig({
+    nodeEnv: "production",
+    storageBackend: "persistent-local"
+  }));
+  assert.doesNotThrow(() => assertStorageConfig({
+    nodeEnv: "development",
+    storageBackend: "local"
+  }));
+>>>>>>> 46febaf29734327c5c292619503c9a32099eeef2
 });

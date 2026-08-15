@@ -1,7 +1,34 @@
 const path = require("node:path");
+const fs = require("node:fs/promises");
 const { spawn } = require("node:child_process");
 const { config } = require("../config/env");
 const { HttpError } = require("../utils/httpError");
+
+function getPdfConversionOutputDir(pdfPath) {
+  return path.join(config.outputDir, "pdf-pages", path.basename(pdfPath, path.extname(pdfPath)));
+}
+
+function assertSafePdfOutputDir(outputDir) {
+  const outputRoot = path.resolve(config.outputDir, "pdf-pages");
+  const resolvedOutputDir = path.resolve(outputDir);
+  const relativePath = path.relative(outputRoot, resolvedOutputDir);
+
+  if (!relativePath || relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    throw new Error("Refusing to remove PDF output directory outside configured output root.");
+  }
+
+  return resolvedOutputDir;
+}
+
+function buildPdfConversionError(stderr, code) {
+  if (/encrypted_pdf_not_supported/i.test(stderr || "")) {
+    const error = new HttpError(400, "Encrypted or password-protected PDF files are not supported.");
+    error.code = "pdf_encrypted";
+    return error;
+  }
+
+  return new Error(stderr || `PDF conversion failed with exit code ${code}`);
+}
 
 function runPythonPdfConverter(args) {
   return new Promise((resolve, reject) => {
@@ -42,7 +69,7 @@ function runPythonPdfConverter(args) {
     child.on("close", (code) => {
       settle(() => {
         if (code !== 0) {
-          reject(new Error(stderr || `PDF conversion failed with exit code ${code}`));
+          reject(buildPdfConversionError(stderr, code));
           return;
         }
 
@@ -58,7 +85,7 @@ function runPythonPdfConverter(args) {
 
 async function convertPdfToImages(pdfPath) {
   const scriptPath = path.resolve(__dirname, "../../scripts/pdf_to_images.py");
-  const outputDir = path.join(config.outputDir, "pdf-pages", path.basename(pdfPath, path.extname(pdfPath)));
+  const outputDir = getPdfConversionOutputDir(pdfPath);
   const result = await runPythonPdfConverter([
     scriptPath,
     "--pdf",
@@ -76,6 +103,12 @@ async function convertPdfToImages(pdfPath) {
   return result.images || [];
 }
 
+async function cleanupPdfConversionOutput(pdfPath) {
+  const outputDir = assertSafePdfOutputDir(getPdfConversionOutputDir(pdfPath));
+  await fs.rm(outputDir, { recursive: true, force: true });
+}
+
 module.exports = {
+  cleanupPdfConversionOutput,
   convertPdfToImages
 };

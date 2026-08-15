@@ -62,6 +62,10 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function sameObjectId(left, right) {
+  return Boolean(left && right && left.toString() === right.toString());
+}
+
 function validatePassword(password) {
   if (String(password || "").length < 8) {
     throw new HttpError(400, "Паролата трябва да бъде поне 8 символа.");
@@ -167,6 +171,10 @@ async function getAuthContext(tokenPayload) {
   ]);
 
   if (!user || !user.isActive || !company || !membership || !membership.isActive) {
+    throw new HttpError(401, "Невалидна или изтекла сесия.");
+  }
+
+  if (!sameObjectId(membership.userId, user._id) || !sameObjectId(membership.companyId, company._id)) {
     throw new HttpError(401, "Невалидна или изтекла сесия.");
   }
 

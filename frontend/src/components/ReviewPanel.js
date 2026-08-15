@@ -17,6 +17,12 @@ function ReviewPanel({
 }) {
   const extracted = draft;
   const warnings = getImportantWarnings(extracted);
+  const reviewReasonCodes = new Set(extracted?.reviewReasons || []);
+  const visibleWarningCodes = (extracted?.warnings || []).filter((warning) => !reviewReasonCodes.has(warning));
+  const reviewMessages = [
+    ...warnings,
+    ...(extracted?.reviewReasons || []).map((reason) => reviewReasonLabels[reason] || reason)
+  ].filter(Boolean);
 
   return (
     <section className={`${styles.moduleRoot} result-panel`}>
@@ -40,18 +46,16 @@ function ReviewPanel({
               <div><span>Общо</span><strong>{extracted.totalAmount ?? '-'} {extracted.currency || ''}</strong></div>
             </div>
 
-            {(warnings.length > 0 || extracted.needsReview) && (
+            {(reviewMessages.length > 0 || extracted.needsReview) && (
               <div className="review-box">
-                {[...warnings, ...(extracted.reviewReasons || []).map((reason) => reviewReasonLabels[reason] || reason)]
-                  .filter(Boolean)
-                  .map((warning) => <div key={warning}>⚠ {warning}</div>)}
+                {reviewMessages.map((warning) => <div key={warning}>! {warning}</div>)}
               </div>
             )}
 
-            {(extracted.warnings || []).length > 0 && (
+            {visibleWarningCodes.length > 0 && (
               <div className="warning-box">
-                {extracted.warnings.map((warning) => (
-                  <div key={warning}>⚠ {warningLabels[warning] || warning}</div>
+                {visibleWarningCodes.map((warning) => (
+                  <div key={warning}>! {warningLabels[warning] || warning}</div>
                 ))}
               </div>
             )}

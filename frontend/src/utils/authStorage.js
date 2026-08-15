@@ -1,18 +1,60 @@
 const AUTH_STORAGE_KEY = 'ocr-auth';
 
-export function getStoredAuth() {
+function getBrowserStorage(storageName) {
+  if (typeof window === 'undefined') return null;
+
   try {
-    return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY));
+    return window[storageName];
   } catch {
     return null;
   }
 }
 
+function clearLegacyLocalAuth() {
+  const legacyStorage = getBrowserStorage('localStorage');
+  if (!legacyStorage) return;
+
+  try {
+    legacyStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // Ignore unavailable browser storage.
+  }
+}
+
+export function getStoredAuth() {
+  const storage = getBrowserStorage('sessionStorage');
+  clearLegacyLocalAuth();
+  if (!storage) return null;
+
+  try {
+    const rawAuth = storage.getItem(AUTH_STORAGE_KEY);
+    return rawAuth ? JSON.parse(rawAuth) : null;
+  } catch {
+    clearStoredAuth();
+    return null;
+  }
+}
+
 export function setStoredAuth(auth) {
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
+  const storage = getBrowserStorage('sessionStorage');
+  if (!storage) return;
+
+  try {
+    storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
+    clearLegacyLocalAuth();
+  } catch {
+    clearStoredAuth();
+  }
 }
 
 export function clearStoredAuth() {
-  localStorage.removeItem(AUTH_STORAGE_KEY);
-}
+  const storage = getBrowserStorage('sessionStorage');
 
+  try {
+    storage?.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // Ignore unavailable browser storage.
+  }
+
+  clearLegacyLocalAuth();
+}
