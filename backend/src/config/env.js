@@ -60,6 +60,12 @@ const config = {
   localUploadRetentionDays: readPositiveIntEnv("LOCAL_UPLOAD_RETENTION_DAYS", 30),
   localOutputRetentionDays: readPositiveIntEnv("LOCAL_OUTPUT_RETENTION_DAYS", 7),
   localStorageCleanupIntervalMs: readPositiveIntEnv("LOCAL_STORAGE_CLEANUP_INTERVAL_MS", 6 * 60 * 60 * 1000),
+  smtpHost: process.env.SMTP_HOST,
+  smtpPort: readPositiveIntEnv("SMTP_PORT", 587),
+  smtpSecure: process.env.SMTP_SECURE === "true",
+  smtpUser: process.env.SMTP_USER,
+  smtpPass: process.env.SMTP_PASS,
+  smtpFrom: process.env.SMTP_FROM,
 };
 
 function assertConfig() {

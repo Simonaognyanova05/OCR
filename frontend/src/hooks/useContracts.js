@@ -4,6 +4,16 @@ import { listContracts } from '../services/contractService';
 export const initialContractFilters = {
   status: '',
   contractType: '',
+  company: '',
+  endDateFrom: '',
+  endDateTo: '',
+  expiresInDays: '',
+  valueMin: '',
+  valueMax: '',
+  penaltyMin: '',
+  penaltyMax: '',
+  currency: '',
+  renewsAutomatically: '',
 };
 
 export function useContracts(auth, onError) {

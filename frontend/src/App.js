@@ -10,6 +10,7 @@ import { initialDocumentFilters, useDocuments } from './hooks/useDocuments';
 import { useHealth } from './hooks/useHealth';
 import AdminPage from './pages/AdminPage';
 import CompanyPage from './pages/CompanyPage';
+import ContractDetailPage from './pages/ContractDetailPage';
 import ContractsPage from './pages/ContractsPage';
 import DashboardPage from './pages/DashboardPage';
 import DocumentsPage from './pages/DocumentsPage';
@@ -329,6 +330,7 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
             />
           )}
         />
+        <Route path="contracts/:id" element={<ContractDetailPage auth={auth} />} />
         <Route
           path="workspace"
           element={(

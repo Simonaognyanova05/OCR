@@ -4,6 +4,7 @@ const {
   getContractFileHandler,
   getContractHandler,
   listContractsHandler,
+  sendContractReminderEmailHandler,
   uploadContractHandler
 } = require("../controllers/contractController");
 const { requireAuth } = require("../middleware/authMiddleware");
@@ -18,6 +19,7 @@ const router = express.Router();
 router.post("/contracts/upload", requireAuth, uploadRateLimit, uploadDocument.single("document"), validateUploadedDocumentSignature, uploadContractHandler);
 router.post("/contracts/extract", requireAuth, extractRateLimit, uploadDocument.single("document"), validateUploadedDocumentSignature, extractContractHandler);
 router.get("/contracts", requireAuth, listContractsHandler);
+router.post("/contracts/:id/reminder-email", requireAuth, sendContractReminderEmailHandler);
 router.get("/contracts/:id/file", requireAuth, getContractFileHandler);
 router.get("/contracts/:id", requireAuth, getContractHandler);
 

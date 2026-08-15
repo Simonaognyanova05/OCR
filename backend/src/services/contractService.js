@@ -5,6 +5,7 @@ const { docxMimeType, ocrMimeTypes } = require("../middleware/uploadMiddleware")
 const { HttpError } = require("../utils/httpError");
 const { cleanupPdfConversionOutput, convertPdfToImages } = require("./pdfConversionService");
 const { extractDocxText } = require("./docxTextService");
+const { sendEmail } = require("./emailService");
 const { extractContractDocumentFromImages, extractContractDocumentFromText } = require("./ocrService");
 const { countCompanyDocumentsThisMonth } = require("./documentRepository");
 const {
@@ -168,10 +169,83 @@ async function listContracts(filters, authContext) {
   return listCompanyContracts(authContext.company._id, filters || {});
 }
 
+function getDaysUntil(dateValue) {
+  if (!dateValue) return null;
+
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const [year, month, day] = String(dateValue).split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (!Number.isFinite(date.getTime())) return null;
+
+  return Math.ceil((date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+function formatAmount(value, currency) {
+  if (value === null || value === undefined || value === "") return "-";
+  return `${value} ${currency || ""}`.trim();
+}
+
+function buildReminderEmail(contract, authContext) {
+  const data = contract.data || {};
+  const title = data.title || contract.original_name || "Договор";
+  const daysUntilEnd = getDaysUntil(data.endDate);
+  const subject = daysUntilEnd === null
+    ? `Напомняне за договор: ${title}`
+    : `Договорът "${title}" изтича след ${daysUntilEnd} дни`;
+  const clauses = Array.isArray(data.importantClauses) && data.importantClauses.length
+    ? data.importantClauses.join(", ")
+    : "-";
+  const summary = data.summary || "Няма налично резюме.";
+  const text = [
+    `Напомняне за договор: ${title}`,
+    "",
+    `Фирма: ${authContext.company.name}`,
+    `Страна A: ${data.partyA || "-"}`,
+    `Страна B: ${data.partyB || "-"}`,
+    `Тип: ${data.contractType || "-"}`,
+    `Дата на подписване: ${data.signDate || "-"}`,
+    `Начало: ${data.startDate || "-"}`,
+    `Край: ${data.endDate || "-"}`,
+    `Оставащи дни: ${daysUntilEnd === null ? "-" : daysUntilEnd}`,
+    `Стойност: ${formatAmount(data.contractValue, data.currency)}`,
+    `Месечно плащане: ${formatAmount(data.monthlyPayment, data.currency)}`,
+    `Неустойка: ${formatAmount(data.penaltyAmount, data.currency)}`,
+    `Автоматично подновяване: ${data.renewsAutomatically === true ? "Да" : data.renewsAutomatically === false ? "Не" : "-"}`,
+    `Важни клаузи: ${clauses}`,
+    "",
+    "Резюме:",
+    summary
+  ].join("\n");
+
+  return {
+    subject,
+    text,
+    html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${text}</pre>`
+  };
+}
+
+async function sendContractReminderEmail(contractId, authContext) {
+  const contract = await findContractById(contractId, authContext.company._id);
+  const email = buildReminderEmail(contract, authContext);
+  const result = await sendEmail({
+    to: authContext.user.email,
+    ...email
+  });
+
+  return {
+    ok: true,
+    recipient: authContext.user.email,
+    message_id: result.messageId
+  };
+}
+
 module.exports = {
   extractContract,
   getContract,
   getContractFile,
   listContracts,
+  sendContractReminderEmail,
   uploadContractOnly
 };

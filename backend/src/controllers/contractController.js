@@ -3,6 +3,7 @@ const {
   getContract,
   getContractFile,
   listContracts,
+  sendContractReminderEmail,
   uploadContractOnly
 } = require("../services/contractService");
 
@@ -59,10 +60,20 @@ async function getContractFileHandler(req, res, next) {
   }
 }
 
+async function sendContractReminderEmailHandler(req, res, next) {
+  try {
+    const result = await sendContractReminderEmail(req.params.id, req.auth);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   extractContractHandler,
   getContractFileHandler,
   getContractHandler,
   listContractsHandler,
+  sendContractReminderEmailHandler,
   uploadContractHandler
 };

@@ -1,5 +1,5 @@
 import { buildQuery } from '../utils/form';
-import { downloadBlob, getJson, sendForm } from './apiClient';
+import { downloadBlob, getJson, sendForm, sendJson } from './apiClient';
 
 export function listContracts(filters, token) {
   const query = buildQuery(filters);
@@ -24,4 +24,8 @@ export function extractContract(file, token) {
   const formData = new FormData();
   formData.append('document', file);
   return sendForm('/api/contracts/extract', formData, token);
+}
+
+export function sendContractReminderEmail(contractId, token) {
+  return sendJson(`/api/contracts/${contractId}/reminder-email`, 'POST', undefined, token);
 }
