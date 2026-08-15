@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getContractFile } from '../services/contractService';
 import { getDocumentFile } from '../services/documentService';
 
 function DocumentPreview({ result, token }) {
@@ -18,7 +19,10 @@ function DocumentPreview({ result, token }) {
       setPreviewError('');
 
       try {
-        const blob = await getDocumentFile(result.id, token);
+        const isContract = result.file_endpoint?.startsWith('/api/contracts/');
+        const blob = isContract
+          ? await getContractFile(result.id, token)
+          : await getDocumentFile(result.id, token);
         if (!active) return;
 
         objectUrl = window.URL.createObjectURL(blob);
@@ -39,13 +43,14 @@ function DocumentPreview({ result, token }) {
         window.URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [result?.id, token]);
+  }, [result?.id, result?.file_endpoint, token]);
 
   if (!result?.id) {
     return <p className="empty">Оригиналният документ ще се покаже тук след качване.</p>;
   }
 
   const isPdf = result.mime_type === 'application/pdf';
+  const isPreviewableImage = result.mime_type?.startsWith('image/');
 
   if (previewError) {
     return <p className="empty">{previewError}</p>;
@@ -59,8 +64,10 @@ function DocumentPreview({ result, token }) {
     <div className="document-preview">
       {isPdf ? (
         <iframe title="Оригинален документ" src={previewUrl} />
-      ) : (
+      ) : isPreviewableImage ? (
         <img src={previewUrl} alt="Оригинален документ" />
+      ) : (
+        <p className="empty">Прегледът е наличен за PDF и изображения. DOCX файлът е записан като защитен файл.</p>
       )}
     </div>
   );

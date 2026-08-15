@@ -1179,6 +1179,15 @@ pre {
   .documents-table td:nth-child(7)::before { content: "Статус"; }
   .documents-table td:nth-child(8)::before { content: "Категория"; }
 
+  .contracts-table td:nth-child(1)::before { content: "Заглавие"; }
+  .contracts-table td:nth-child(2)::before { content: "Тип"; }
+  .contracts-table td:nth-child(3)::before { content: "Страна A"; }
+  .contracts-table td:nth-child(4)::before { content: "Страна B"; }
+  .contracts-table td:nth-child(5)::before { content: "Крайна дата"; }
+  .contracts-table td:nth-child(6)::before { content: "Стойност"; }
+  .contracts-table td:nth-child(7)::before { content: "Неустойка"; }
+  .contracts-table td:nth-child(8)::before { content: "Статус"; }
+
   .empty-cell {
     display: block;
     text-align: left;
@@ -1194,4 +1203,18 @@ pre {
   pre {
     font-size: 12px;
   }
+}
+
+.json-preview {
+  max-height: 520px;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
 }

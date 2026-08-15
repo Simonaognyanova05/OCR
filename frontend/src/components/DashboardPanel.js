@@ -1,4 +1,5 @@
 import { formatMoney } from '../utils/format';
+import { Link } from 'react-router-dom';
 import styles from './DashboardPanel.module.css';
 
 function BreakdownList({ emptyText, items, currency }) {
@@ -64,6 +65,10 @@ function DashboardPanel({ dashboard, onRefresh }) {
           </div>
         </div>
       )}
+
+      <div className="dashboard-actions">
+        <Link className="secondary-button" to="/contracts">Търси договори</Link>
+      </div>
 
       <div className="dashboard-breakdowns">
         <section>

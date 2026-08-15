@@ -37,6 +37,15 @@ export const documentTypeLabels = {
   receipt: 'Касова бележка',
 };
 
+export const documentStatusLabels = {
+  uploaded: 'качен',
+  processing: 'обработва се',
+  needs_review: 'за преглед',
+  approved: 'одобрен',
+  exported: 'експортиран',
+  failed: 'неуспешен',
+};
+
 export const paymentMethodLabels = {
   cash: 'В брой',
   card: 'Карта',

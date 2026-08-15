@@ -5,6 +5,7 @@ const healthRoutes = require("./routes/healthRoutes");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const companyRoutes = require("./routes/companyRoutes");
+const contractRoutes = require("./routes/contractRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const { errorMiddleware } = require("./middleware/errorMiddleware");
 const { securityHeadersMiddleware } = require("./middleware/securityHeadersMiddleware");
@@ -30,6 +31,7 @@ app.use(healthRoutes);
 app.use("/api", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", companyRoutes);
+app.use("/api", contractRoutes);
 app.use("/api", documentRoutes);
 
 app.use(errorMiddleware);

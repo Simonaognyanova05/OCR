@@ -4,9 +4,14 @@ import responsiveStyles from './Responsive.module.css';
 
 const navigationItems = [
   { to: '/', label: 'Табло' },
-  { to: '/documents', label: 'Документи' },
   { to: '/workspace', label: 'Качване и преглед' },
   { to: '/company', label: 'Фирма' },
+];
+
+const documentNavigationItems = [
+  { to: '/documents', label: 'Фактури' },
+  { to: '/documents', label: 'Касови бележки' },
+  { to: '/contracts', label: 'Договори' },
 ];
 
 function AppShell({ auth, health, onLogout }) {
@@ -26,7 +31,31 @@ function AppShell({ auth, health, onLogout }) {
         </div>
 
         <nav className="main-nav">
-          {items.map((item) => (
+          {items.slice(0, 1).map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+
+          <div className="nav-group">
+            <span className="nav-group-label">Документи</span>
+            {documentNavigationItems.map((item) => (
+              <NavLink
+                key={`${item.to}-${item.label}`}
+                to={item.to}
+                className={({ isActive }) => (isActive ? 'nav-link nav-sub-link active' : 'nav-link nav-sub-link')}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+
+          {items.slice(1).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

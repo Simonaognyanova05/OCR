@@ -10,12 +10,14 @@ import { initialDocumentFilters, useDocuments } from './hooks/useDocuments';
 import { useHealth } from './hooks/useHealth';
 import AdminPage from './pages/AdminPage';
 import CompanyPage from './pages/CompanyPage';
+import ContractsPage from './pages/ContractsPage';
 import DashboardPage from './pages/DashboardPage';
 import DocumentsPage from './pages/DocumentsPage';
 import MarketingPage from './pages/MarketingPage';
 import WorkspacePage from './pages/WorkspacePage';
 import { login, register } from './services/authService';
 import { getCompanyProfile, requestSubscriptionPlan, updateCompany } from './services/companyService';
+import { extractContract, uploadContract } from './services/contractService';
 import { approveDocument, extractDocument, saveDocumentReview, uploadDocument } from './services/documentService';
 import { downloadDocumentExport, downloadMonthlyPdfReport } from './services/exportService';
 import { getCurrentMonthValue } from './utils/date';
@@ -24,6 +26,7 @@ import { setFieldValue } from './utils/form';
 function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, updateCompanyDraft }) {
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
+  const [documentKind, setDocumentKind] = useState('expense');
   const [dragActive, setDragActive] = useState(false);
   const [result, setResult] = useState(null);
   const [draft, setDraft] = useState(null);
@@ -140,7 +143,7 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
     }
 
     if (!file) {
-      setError('Избери PDF, JPG или PNG документ.');
+      setError('Избери PDF, DOCX, JPG, PNG или WebP документ.');
       return;
     }
 
@@ -150,10 +153,14 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
     setDraft(null);
 
     try {
-      const data = await extractDocument(file, auth.token);
+      const data = documentKind === 'contract'
+        ? await extractContract(file, auth.token)
+        : await extractDocument(file, auth.token);
       setResult(data);
       setDraft(data.data);
-      setNotice('Данните са извлечени. Прегледай и одобри документа.');
+      setNotice(documentKind === 'contract'
+        ? 'Договорът е качен, разпознат и записан.'
+        : 'Данните са извлечени. Прегледай и одобри документа.');
       navigate('/workspace');
       refreshBusinessData();
     } catch (requestError) {
@@ -170,7 +177,7 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
     }
 
     if (!file) {
-      setError('Избери PDF, JPG или PNG документ.');
+      setError('Избери PDF, DOCX, JPG, PNG или WebP документ.');
       return;
     }
 
@@ -180,9 +187,13 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
     setDraft(null);
 
     try {
-      const data = await uploadDocument(file, auth.token);
+      const data = documentKind === 'contract'
+        ? await uploadContract(file, auth.token)
+        : await uploadDocument(file, auth.token);
       setResult(data);
-      setNotice('Документът е качен със статус uploaded.');
+      setNotice(documentKind === 'contract'
+        ? 'Договорът е качен със статус uploaded.'
+        : 'Документът е качен със статус uploaded.');
       navigate('/workspace');
       refreshBusinessData();
     } catch (requestError) {
@@ -309,10 +320,21 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
           )}
         />
         <Route
+          path="contracts"
+          element={(
+            <ContractsPage
+              auth={auth}
+              onRefreshDashboard={loadDashboard}
+              usage={dashboard?.usage}
+            />
+          )}
+        />
+        <Route
           path="workspace"
           element={(
             <WorkspacePage
               dragActive={dragActive}
+              documentKind={documentKind}
               draft={draft}
               error={error}
               file={file}
@@ -320,6 +342,7 @@ function AuthenticatedApp({ auth, companyDraft, health, logout, saveAuth, update
               notice={notice}
               onApprove={handleApproveDocument}
               onDownloadExport={handleDownloadExport}
+              onDocumentKindChange={setDocumentKind}
               onDragLeave={() => setDragActive(false)}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
