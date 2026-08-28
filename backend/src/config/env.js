@@ -94,6 +94,7 @@ function assertAuthConfig(authConfig = config) {
   }
 }
 
+<<<<<<< HEAD
 function assertDataEncryptionConfig(runtimeConfig = config) {
   const isProduction = runtimeConfig.nodeEnv === "production";
   const key = String(runtimeConfig.dataEncryptionKey || "");
@@ -108,16 +109,21 @@ function assertDataEncryptionConfig(runtimeConfig = config) {
 }
 function assertCorsConfig(runtimeConfig = config) {
   const isProduction = runtimeConfig.nodeEnv === "production";
+=======
+function assertCorsConfig(corsConfig = config) {
+  const isProduction = corsConfig.nodeEnv === "production";
+>>>>>>> 91b860a57dad890628526138ccd66d26db39a44b
 
   if (!isProduction) {
     return;
   }
 
-  if (!Array.isArray(runtimeConfig.corsOrigins) || runtimeConfig.corsOrigins.length === 0) {
-    throw new Error("CORS_ORIGINS must be set to at least one allowed origin in production.");
+  if (!Array.isArray(corsConfig.corsOrigins) || corsConfig.corsOrigins.length === 0) {
+    throw new Error("CORS_ORIGINS must include at least one allowed origin in production.");
   }
 }
 
+<<<<<<< HEAD
 function assertMalwareScanConfig(runtimeConfig = config) {
   const isProduction = runtimeConfig.nodeEnv === "production";
 
@@ -148,14 +154,22 @@ function assertRuntimeConfig(runtimeConfig = config) {
   assertCorsConfig(runtimeConfig);
   assertMalwareScanConfig(runtimeConfig);
   assertStorageConfig(runtimeConfig);
+=======
+function assertRuntimeConfig() {
+  assertAuthConfig();
+  assertCorsConfig();
+>>>>>>> 91b860a57dad890628526138ccd66d26db39a44b
 }
 
 module.exports = {
   assertAuthConfig,
   assertCorsConfig,
+<<<<<<< HEAD
   assertDataEncryptionConfig,
   assertMalwareScanConfig,
   assertStorageConfig,
+=======
+>>>>>>> 91b860a57dad890628526138ccd66d26db39a44b
   config,
   assertConfig,
   assertDatabaseConfig,

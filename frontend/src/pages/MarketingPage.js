@@ -95,7 +95,7 @@ function MarketingPage() {
               само данните, на които имате доверие.
             </p>
             <div className={styles.actions}>
-              <Link className={styles.primaryAction} to="/login?mode=register">Изпробвай безплатно</Link>
+              <Link className={styles.primaryAction} to="/demo">Изпробвай без профил</Link>
               <a className={styles.secondaryAction} href="#how-it-works">Виж процеса</a>
             </div>
             <span className={styles.formats}>Поддържа PDF, JPG, PNG и WebP документи</span>
@@ -191,7 +191,7 @@ function MarketingPage() {
             <p className={styles.eyebrow}>Готови ли сте?</p>
             <h2>Обработвайте фактури и касови бележки по-бързо</h2>
           </div>
-          <Link className={styles.primaryAction} to="/login?mode=register">Създай акаунт</Link>
+          <Link className={styles.primaryAction} to="/demo">Тествай OCR</Link>
         </section>
       </main>
 

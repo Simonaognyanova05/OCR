@@ -16,6 +16,8 @@ function UploadPanel({
   onSubmit,
   onUploadOnly,
   result,
+  showExportActions = true,
+  showUploadOnly = true,
   usage,
 }) {
   const limitReached = Boolean(usage?.limitReached);
@@ -72,6 +74,10 @@ function UploadPanel({
           <button type="button" disabled={!canExport} className="secondary-button" onClick={() => onDownloadExport('pdf')}>Експорт PDF</button>
         </>
       )}
+      <button type="submit" disabled={disabled || !file}>{loading ? 'Извличане...' : 'Извлечи данни'}</button>
+      {showUploadOnly && <button type="button" disabled={disabled || !file} className="secondary-button" onClick={onUploadOnly}>Само качи</button>}
+      {showExportActions && <button type="button" disabled={!canExport} className="secondary-button" onClick={() => onDownloadExport('excel')}>Експорт Excel</button>}
+      {showExportActions && <button type="button" disabled={!canExport} className="secondary-button" onClick={() => onDownloadExport('pdf')}>Експорт PDF</button>}
       {error && <p className="error">{error}</p>}
       {notice && <p className="notice">{notice}</p>}
     </form>
