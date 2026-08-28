@@ -1,13 +1,22 @@
 const Document = require("../models/Document");
 const { HttpError } = require("../utils/httpError");
 const { sanitizeDocumentDataForStorage } = require("../utils/documentSanitizer");
+const { decryptFields, encryptFields } = require("../utils/fieldEncryption");
 
 const documentStatuses = new Set(["uploaded", "processing", "needs_review", "approved", "exported", "failed"]);
 const documentTypes = new Set(["invoice", "receipt", "other"]);
 const currencies = new Set(["BGN", "EUR", "USD"]);
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 const maxTextFilterLength = 80;
+const protectedDocumentDataFields = new Set(["personalName", "egn"]);
 
+function encryptDocumentData(data) {
+  return encryptFields(data, protectedDocumentDataFields);
+}
+
+function decryptDocumentData(data) {
+  return decryptFields(data, protectedDocumentDataFields);
+}
 function assertTenantScope(companyId) {
   if (companyId === undefined || companyId === null || companyId === "") {
     throw new Error("Tenant companyId is required for document repository access.");
@@ -15,6 +24,8 @@ function assertTenantScope(companyId) {
 }
 
 function toApiDocument(document) {
+  const data = decryptDocumentData(document.data);
+
   return {
     id: document._id.toString(),
     company_id: document.companyId.toString(),
@@ -35,12 +46,12 @@ function toApiDocument(document) {
     reviewed_at: document.reviewedAt ? document.reviewedAt.toISOString() : undefined,
     created_at: document.createdAt?.toISOString(),
     updated_at: document.updatedAt?.toISOString(),
-    data: document.data
+    data
   };
 }
 
 function toApiDocumentListItem(document) {
-  const data = document.data || {};
+  const data = decryptDocumentData(document.data) || {};
 
   return {
     id: document._id.toString(),
@@ -364,6 +375,7 @@ async function updateExtractedDocument(documentId, companyId, payload) {
   assertTenantScope(companyId);
 
   const sanitizedData = sanitizeDocumentDataForStorage(payload.data);
+  const protectedData = encryptDocumentData(sanitizedData);
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId },
     {
@@ -376,7 +388,7 @@ async function updateExtractedDocument(documentId, companyId, payload) {
         failedAt: null,
         failureCode: null,
         failureMessage: null,
-        data: sanitizedData
+        data: protectedData
       }
     },
     { new: true, runValidators: true }
@@ -393,6 +405,7 @@ async function updateReviewedDocument(documentId, reviewedData, companyId) {
   assertTenantScope(companyId);
 
   const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
+  const protectedData = encryptDocumentData(sanitizedData);
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId },
     {
@@ -400,7 +413,7 @@ async function updateReviewedDocument(documentId, reviewedData, companyId) {
         status: "needs_review",
         reviewedAt: new Date(),
         documentType: sanitizedData.documentType || null,
-        data: sanitizedData
+        data: protectedData
       }
     },
     { new: true, runValidators: true }
@@ -417,6 +430,11 @@ async function approveReviewedDocument(documentId, reviewedData, companyId) {
   assertTenantScope(companyId);
 
   const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
+  const protectedData = encryptDocumentData({
+    ...sanitizedData,
+    needsReview: false,
+    reviewReasons: []
+  });
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId, status: "needs_review" },
     {
@@ -424,11 +442,7 @@ async function approveReviewedDocument(documentId, reviewedData, companyId) {
         status: "approved",
         reviewedAt: new Date(),
         documentType: sanitizedData.documentType || null,
-        data: {
-          ...sanitizedData,
-          needsReview: false,
-          reviewReasons: []
-        }
+        data: protectedData
       }
     },
     { new: true, runValidators: true }
@@ -474,6 +488,8 @@ module.exports = {
   approveReviewedDocument,
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
+  decryptDocumentData,
+  encryptDocumentData,
   findDocumentFileById,
   findDocumentById,
   findPotentialDuplicateDocument,

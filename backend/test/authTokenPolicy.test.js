@@ -7,6 +7,7 @@ const {
   assertCorsConfig,
   assertMalwareScanConfig,
   assertStorageConfig,
+  assertDataEncryptionConfig,
   assertRuntimeConfig,
   config
 } = require("../src/config/env");
@@ -58,6 +59,25 @@ test("production rejects missing, default, or weak auth secrets", () => {
   }));
 });
 
+
+test("production requires a strong data encryption key", () => {
+  assert.throws(
+    () => assertDataEncryptionConfig({ nodeEnv: "production", dataEncryptionKey: "" }),
+    /DATA_ENCRYPTION_KEY/
+  );
+  assert.throws(
+    () => assertDataEncryptionConfig({ nodeEnv: "production", dataEncryptionKey: "short-key" }),
+    /DATA_ENCRYPTION_KEY/
+  );
+  assert.doesNotThrow(() => assertDataEncryptionConfig({
+    nodeEnv: "production",
+    dataEncryptionKey: "a-strong-data-encryption-key-32-chars"
+  }));
+  assert.doesNotThrow(() => assertDataEncryptionConfig({
+    nodeEnv: "development",
+    dataEncryptionKey: ""
+  }));
+});
 test("production rejects empty CORS origins", () => {
   assert.throws(
     () => assertCorsConfig({ nodeEnv: "production", corsOrigins: [] }),
@@ -67,6 +87,7 @@ test("production rejects empty CORS origins", () => {
     () => assertRuntimeConfig({
       nodeEnv: "production",
       authSecret: "a-strong-production-secret-at-least-32-chars",
+      dataEncryptionKey: "a-strong-data-encryption-key-32-chars",
       corsOrigins: []
     }),
     /CORS_ORIGINS/
@@ -85,6 +106,7 @@ test("production accepts configured CORS origins and development can be empty", 
   assert.doesNotThrow(() => assertRuntimeConfig({
     nodeEnv: "production",
     authSecret: "a-strong-production-secret-at-least-32-chars",
+    dataEncryptionKey: "a-strong-data-encryption-key-32-chars",
     corsOrigins: ["https://app.example.com"],
     malwareScanCommand: "clamscan",
     storageBackend: "persistent-local"
@@ -100,6 +122,7 @@ test("production requires malware scanning command and development can skip it",
     () => assertRuntimeConfig({
       nodeEnv: "production",
       authSecret: "a-strong-production-secret-at-least-32-chars",
+      dataEncryptionKey: "a-strong-data-encryption-key-32-chars",
       corsOrigins: ["https://app.example.com"],
       malwareScanCommand: ""
     }),
@@ -120,6 +143,7 @@ test("production requires explicit persistent local storage backend", () => {
     () => assertRuntimeConfig({
       nodeEnv: "production",
       authSecret: "a-strong-production-secret-at-least-32-chars",
+      dataEncryptionKey: "a-strong-data-encryption-key-32-chars",
       corsOrigins: ["https://app.example.com"],
       malwareScanCommand: "clamscan",
       storageBackend: "local"

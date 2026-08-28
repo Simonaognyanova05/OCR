@@ -31,6 +31,7 @@ const config = {
   fallbackModel: process.env.OPENAI_FALLBACK_MODEL || "gpt-5.5",
   mongodbUri: process.env.MONGODB_URI,
   authSecret: process.env.AUTH_SECRET || defaultAuthSecret,
+  dataEncryptionKey: process.env.DATA_ENCRYPTION_KEY,
   authTokenTtlSeconds: readPositiveIntEnv("AUTH_TOKEN_TTL_SECONDS", 12 * 60 * 60),
   port: Number(process.env.PORT || 3000),
   corsOrigins: readCsvEnv(process.env.CORS_ORIGINS),
@@ -93,6 +94,18 @@ function assertAuthConfig(authConfig = config) {
   }
 }
 
+function assertDataEncryptionConfig(runtimeConfig = config) {
+  const isProduction = runtimeConfig.nodeEnv === "production";
+  const key = String(runtimeConfig.dataEncryptionKey || "");
+
+  if (!isProduction) {
+    return;
+  }
+
+  if (!key || key.length < 32) {
+    throw new Error("DATA_ENCRYPTION_KEY must be set to a strong value in production.");
+  }
+}
 function assertCorsConfig(runtimeConfig = config) {
   const isProduction = runtimeConfig.nodeEnv === "production";
 
@@ -131,6 +144,7 @@ function assertStorageConfig(runtimeConfig = config) {
 
 function assertRuntimeConfig(runtimeConfig = config) {
   assertAuthConfig(runtimeConfig);
+  assertDataEncryptionConfig(runtimeConfig);
   assertCorsConfig(runtimeConfig);
   assertMalwareScanConfig(runtimeConfig);
   assertStorageConfig(runtimeConfig);
@@ -139,6 +153,7 @@ function assertRuntimeConfig(runtimeConfig = config) {
 module.exports = {
   assertAuthConfig,
   assertCorsConfig,
+  assertDataEncryptionConfig,
   assertMalwareScanConfig,
   assertStorageConfig,
   config,
