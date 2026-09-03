@@ -4,6 +4,7 @@ import ReviewPanel from '../components/ReviewPanel';
 import UploadPanel from '../components/UploadPanel';
 import { extractPublicDemoDocument } from '../services/documentService';
 import { setFieldValue } from '../utils/form';
+import demoStyles from './PublicDemoPage.module.css';
 import styles from './WorkspacePage.module.css';
 
 function PublicDemoPage() {
@@ -58,7 +59,7 @@ function PublicDemoPage() {
         title="OCR тест без профил | OCR Finance"
       />
 
-      <main className="page-content">
+      <main className={`${demoStyles.demoPage} page-content`}>
         <section className="page-hero">
           <p className="eyebrow">Тест без профил</p>
           <h2>Пробвай OCR извличане без регистрация</h2>
