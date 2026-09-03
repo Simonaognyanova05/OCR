@@ -66,18 +66,14 @@ function UploadPanel({
         onChange={(event) => onFileChange(event.target.files?.[0] || null)}
       />
       {file && <div className="file-meta"><strong>{file.name}</strong><span>{Math.round(file.size / 1024)} KB</span></div>}
-      <button type="submit" disabled={disabled || !file}>{loading ? 'Извличане...' : isContract ? 'Качи договор' : 'Извлечи данни'}</button>
-      <button type="button" disabled={disabled || !file} className="secondary-button" onClick={onUploadOnly}>Само качи</button>
-      {!isContract && (
-        <>
+      <button type="submit" disabled={disabled || !file}>{loading ? 'Извличане...' : isContract ? 'Анализирай договор' : 'Извлечи данни'}</button>
+      {showUploadOnly && <button type="button" disabled={disabled || !file} className="secondary-button" onClick={onUploadOnly}>Само качи без анализ</button>}
+      {showExportActions && !isContract && (
+        <div className="export-actions">
           <button type="button" disabled={!canExport} className="secondary-button" onClick={() => onDownloadExport('excel')}>Експорт Excel</button>
           <button type="button" disabled={!canExport} className="secondary-button" onClick={() => onDownloadExport('pdf')}>Експорт PDF</button>
-        </>
+        </div>
       )}
-      <button type="submit" disabled={disabled || !file}>{loading ? 'Извличане...' : 'Извлечи данни'}</button>
-      {showUploadOnly && <button type="button" disabled={disabled || !file} className="secondary-button" onClick={onUploadOnly}>Само качи</button>}
-      {showExportActions && <button type="button" disabled={!canExport} className="secondary-button" onClick={() => onDownloadExport('excel')}>Експорт Excel</button>}
-      {showExportActions && <button type="button" disabled={!canExport} className="secondary-button" onClick={() => onDownloadExport('pdf')}>Експорт PDF</button>}
       {error && <p className="error">{error}</p>}
       {notice && <p className="notice">{notice}</p>}
     </form>
