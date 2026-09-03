@@ -259,11 +259,30 @@
   :global(.documents-table) td:nth-child(7)::before { content: "Статус"; }
   :global(.documents-table) td:nth-child(8)::before { content: "Категория"; }
 
+  :global(.admin-table) td[data-label]::before {
+    content: attr(data-label);
+  }
+
   :global(.empty-cell) {
     display: block;
     text-align: left;
   }
-}
+
+  :global(.documents-table) :global(.empty-cell)::before {
+    content: none;
+  }
+
+  :global(.admin-table) :global(.table-actions) {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-width: 0;
+    width: 100%;
+  }
+
+  :global(.admin-table) :global(.table-actions) button {
+    min-width: 0;
+    width: 100%;
+  }}
 
 @media (max-width: 420px) {
   :global(.documents-table) td {

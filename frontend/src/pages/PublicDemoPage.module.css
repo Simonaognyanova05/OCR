@@ -1,0 +1,102 @@
+.demoPage {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.demoPage :global(.workspace),
+.demoPage :global(.result-panel),
+.demoPage :global(.review-layout),
+.demoPage :global(.preview-panel),
+.demoPage :global(.fields-panel) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.demoPage :global(.summary-grid) > div,
+.demoPage :global(.review-box),
+.demoPage :global(.warning-box),
+.demoPage :global(.edit-form) > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1040px) {
+  .demoPage :global(.workspace),
+  .demoPage :global(.review-layout) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  .demoPage {
+    width: calc(100% - 24px);
+    padding-top: 16px;
+  }
+
+  .demoPage :global(.page-hero),
+  .demoPage :global(.upload-panel),
+  .demoPage :global(.result-panel) {
+    padding: 18px;
+  }
+
+  .demoPage :global(.summary-grid),
+  .demoPage :global(.review-fields) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .demoPage :global(.summary-grid) {
+    gap: 10px;
+  }
+
+  .demoPage :global(.summary-grid) > div {
+    padding: 14px 16px;
+  }
+
+  .demoPage :global(.review-box),
+  .demoPage :global(.warning-box) {
+    padding: 14px 16px;
+    line-height: 1.45;
+  }
+
+  .demoPage :global(.upload-panel) input[type='file'],
+  .demoPage :global(.upload-panel) button {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .demoPage {
+    width: calc(100% - 20px);
+    padding-bottom: 28px;
+  }
+
+  .demoPage :global(.page-hero),
+  .demoPage :global(.upload-panel),
+  .demoPage :global(.result-panel) {
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .demoPage :global(.page-hero) h2 {
+    font-size: clamp(1.5rem, 7vw, 1.8rem);
+    line-height: 1.15;
+  }
+
+  .demoPage :global(.result-panel) h2 {
+    font-size: 1.35rem;
+  }
+
+  .demoPage :global(.preview-panel) h3 {
+    font-size: 1.05rem;
+  }
+
+  .demoPage :global(.summary-grid) strong {
+    font-size: 1.2rem;
+  }
+
+  .demoPage :global(details) pre {
+    max-width: 100%;
+    font-size: 11px;
+  }
+}
