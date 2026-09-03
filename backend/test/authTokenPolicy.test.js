@@ -2,9 +2,6 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
 const { signToken, verifyToken } = require("../src/utils/auth");
-<<<<<<< HEAD
-const { assertAuthConfig, assertCorsConfig, config } = require("../src/config/env");
-=======
 const {
   assertAuthConfig,
   assertCorsConfig,
@@ -14,7 +11,6 @@ const {
   assertRuntimeConfig,
   config
 } = require("../src/config/env");
->>>>>>> 46febaf29734327c5c292619503c9a32099eeef2
 
 function signLegacyToken(payload) {
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
@@ -88,11 +84,10 @@ test("production rejects empty CORS origins", () => {
     /CORS_ORIGINS/
   );
   assert.throws(
-<<<<<<< HEAD
     () => assertCorsConfig({ nodeEnv: "production" }),
     /CORS_ORIGINS/
   );
-=======
+  assert.throws(
     () => assertRuntimeConfig({
       nodeEnv: "production",
       authSecret: "a-strong-production-secret-at-least-32-chars",
@@ -104,7 +99,6 @@ test("production rejects empty CORS origins", () => {
 });
 
 test("production accepts configured CORS origins and development can be empty", () => {
->>>>>>> 46febaf29734327c5c292619503c9a32099eeef2
   assert.doesNotThrow(() => assertCorsConfig({
     nodeEnv: "production",
     corsOrigins: ["https://app.example.com"]
@@ -113,8 +107,6 @@ test("production accepts configured CORS origins and development can be empty", 
     nodeEnv: "development",
     corsOrigins: []
   }));
-<<<<<<< HEAD
-=======
   assert.doesNotThrow(() => assertRuntimeConfig({
     nodeEnv: "production",
     authSecret: "a-strong-production-secret-at-least-32-chars",
@@ -170,5 +162,4 @@ test("production requires explicit persistent local storage backend", () => {
     nodeEnv: "development",
     storageBackend: "local"
   }));
->>>>>>> 46febaf29734327c5c292619503c9a32099eeef2
 });

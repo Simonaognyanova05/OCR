@@ -187,6 +187,15 @@ function formatAmount(value, currency) {
   return `${value} ${currency || ""}`.trim();
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildReminderEmail(contract, authContext) {
   const data = contract.data || {};
   const title = data.title || contract.original_name || "Договор";
@@ -222,7 +231,7 @@ function buildReminderEmail(contract, authContext) {
   return {
     subject,
     text,
-    html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${text}</pre>`
+    html: `<pre style="font-family:Arial,sans-serif;white-space:pre-wrap">${escapeHtml(text)}</pre>`
   };
 }
 
@@ -242,6 +251,7 @@ async function sendContractReminderEmail(contractId, authContext) {
 }
 
 module.exports = {
+  buildReminderEmail,
   extractContract,
   getContract,
   getContractFile,

@@ -48,6 +48,8 @@ const config = {
   ocrMaxConcurrentJobs: readPositiveIntEnv("OCR_MAX_CONCURRENT_JOBS", 2),
   authRateLimitWindowMs: readPositiveIntEnv("AUTH_RATE_LIMIT_WINDOW_MS", 15 * 60 * 1000),
   authRateLimitMax: readPositiveIntEnv("AUTH_RATE_LIMIT_MAX", 20),
+  publicDemoRateLimitWindowMs: readPositiveIntEnv("PUBLIC_DEMO_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
+  publicDemoRateLimitMax: readPositiveIntEnv("PUBLIC_DEMO_RATE_LIMIT_MAX", 5),
   uploadRateLimitWindowMs: readPositiveIntEnv("UPLOAD_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
   uploadRateLimitMax: readPositiveIntEnv("UPLOAD_RATE_LIMIT_MAX", 30),
   extractRateLimitWindowMs: readPositiveIntEnv("EXTRACT_RATE_LIMIT_WINDOW_MS", 60 * 60 * 1000),
@@ -94,7 +96,6 @@ function assertAuthConfig(authConfig = config) {
   }
 }
 
-<<<<<<< HEAD
 function assertDataEncryptionConfig(runtimeConfig = config) {
   const isProduction = runtimeConfig.nodeEnv === "production";
   const key = String(runtimeConfig.dataEncryptionKey || "");
@@ -107,23 +108,19 @@ function assertDataEncryptionConfig(runtimeConfig = config) {
     throw new Error("DATA_ENCRYPTION_KEY must be set to a strong value in production.");
   }
 }
+
 function assertCorsConfig(runtimeConfig = config) {
   const isProduction = runtimeConfig.nodeEnv === "production";
-=======
-function assertCorsConfig(corsConfig = config) {
-  const isProduction = corsConfig.nodeEnv === "production";
->>>>>>> 91b860a57dad890628526138ccd66d26db39a44b
 
   if (!isProduction) {
     return;
   }
 
-  if (!Array.isArray(corsConfig.corsOrigins) || corsConfig.corsOrigins.length === 0) {
+  if (!Array.isArray(runtimeConfig.corsOrigins) || runtimeConfig.corsOrigins.length === 0) {
     throw new Error("CORS_ORIGINS must include at least one allowed origin in production.");
   }
 }
 
-<<<<<<< HEAD
 function assertMalwareScanConfig(runtimeConfig = config) {
   const isProduction = runtimeConfig.nodeEnv === "production";
 
@@ -154,22 +151,14 @@ function assertRuntimeConfig(runtimeConfig = config) {
   assertCorsConfig(runtimeConfig);
   assertMalwareScanConfig(runtimeConfig);
   assertStorageConfig(runtimeConfig);
-=======
-function assertRuntimeConfig() {
-  assertAuthConfig();
-  assertCorsConfig();
->>>>>>> 91b860a57dad890628526138ccd66d26db39a44b
 }
 
 module.exports = {
   assertAuthConfig,
   assertCorsConfig,
-<<<<<<< HEAD
   assertDataEncryptionConfig,
   assertMalwareScanConfig,
   assertStorageConfig,
-=======
->>>>>>> 91b860a57dad890628526138ccd66d26db39a44b
   config,
   assertConfig,
   assertDatabaseConfig,

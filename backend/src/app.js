@@ -13,6 +13,10 @@ const { securityHeadersMiddleware } = require("./middleware/securityHeadersMiddl
 
 const app = express();
 
+if (config.nodeEnv === "production") {
+  app.set("trust proxy", 1);
+}
+
 app.use(securityHeadersMiddleware);
 app.use(
   cors({

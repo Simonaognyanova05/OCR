@@ -67,26 +67,15 @@ test("document file endpoint denies anonymous requests before file access", asyn
 });
 
 test("new uploaded documents do not persist legacy public /uploads URLs", async () => {
-  const originalCreate = Document.create;
-  let capturedPayload;
+  const originalSave = Document.prototype.save;
+  let savedDocument;
 
-  Document.create = async (payload) => {
-    capturedPayload = payload;
-    return {
-      _id: "507f1f77bcf86cd799439011",
-      companyId: payload.companyId,
-      uploadedBy: payload.uploadedBy,
-      originalName: payload.originalName,
-      originalFileName: payload.originalFileName,
-      storedFile: payload.storedFile,
-      fileUrl: payload.fileUrl,
-      mimeType: payload.mimeType,
-      status: payload.status,
-      documentType: payload.documentType,
-      data: payload.data,
-      createdAt: new Date("2026-07-14T00:00:00.000Z"),
-      updatedAt: new Date("2026-07-14T00:00:00.000Z")
-    };
+  Document.prototype.save = async function save() {
+    savedDocument = this;
+    const now = new Date("2026-07-14T00:00:00.000Z");
+    this.createdAt = now;
+    this.updatedAt = now;
+    return this;
   };
 
   try {
@@ -98,11 +87,12 @@ test("new uploaded documents do not persist legacy public /uploads URLs", async 
       mime_type: "application/pdf"
     });
 
-    assert.equal(capturedPayload.fileUrl, null);
-    assert.equal(result.file_url, "/api/documents/507f1f77bcf86cd799439011/file");
-    assert.doesNotMatch(JSON.stringify(capturedPayload), /\/uploads\//);
+    assert.equal(savedDocument.fileUrl, `/api/documents/${savedDocument._id}/file`);
+    assert.equal(result.file_endpoint, `/api/documents/${savedDocument._id}/file`);
+    assert.equal(Object.hasOwn(result, "file_url"), false);
+    assert.doesNotMatch(JSON.stringify(savedDocument.toObject()), /\/uploads\//);
   } finally {
-    Document.create = originalCreate;
+    Document.prototype.save = originalSave;
   }
 });
 

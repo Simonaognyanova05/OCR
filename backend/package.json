@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "extract": "node src/cli.js"
+    "extract": "node src/cli.js",
+    "test": "node --test test"
   },
   "dependencies": {
     "cors": "^2.8.6",
