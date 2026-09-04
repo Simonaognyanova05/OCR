@@ -116,13 +116,13 @@ function AdminPage({ auth }) {
                 <tr><td colSpan="7" className="empty-cell">Няма заявки за този статус.</td></tr>
               ) : requests.map((request) => (
                 <tr key={request.id}>
-                  <td>{request.company?.name || '-'}</td>
-                  <td>{request.requested_by?.email || '-'}</td>
-                  <td>{request.current_plan}</td>
-                  <td>{request.requested_plan}</td>
-                  <td>{request.status}</td>
-                  <td>{request.created_at ? new Date(request.created_at).toLocaleDateString('bg-BG') : '-'}</td>
-                  <td>
+                  <td data-label="Фирма">{request.company?.name || '-'}</td>
+                  <td data-label="Потребител">{request.requested_by?.email || '-'}</td>
+                  <td data-label="Текущ план">{request.current_plan}</td>
+                  <td data-label="Заявен план">{request.requested_plan}</td>
+                  <td data-label="Статус">{request.status}</td>
+                  <td data-label="Дата">{request.created_at ? new Date(request.created_at).toLocaleDateString('bg-BG') : '-'}</td>
+                  <td data-label="Действия">
                     <div className="table-actions">
                       <button type="button" disabled={loading || request.status !== 'pending'} onClick={() => handleApprove(request.id)}>
                         Одобри

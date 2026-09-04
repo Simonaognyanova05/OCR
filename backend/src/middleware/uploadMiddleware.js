@@ -7,11 +7,13 @@ const { HttpError } = require("../utils/httpError");
 const { detectImageDimensionsFromFile, detectMimeTypeFromFile } = require("../utils/fileSignature");
 const { scanUploadedFileForMalware } = require("../services/malwareScanService");
 
-const allowedMimeTypes = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
+const docxMimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const allowedMimeTypes = new Set(["application/pdf", docxMimeType, "image/png", "image/jpeg", "image/webp"]);
 const ocrMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 const maxImagePixels = 25 * 1000 * 1000;
 const extensionByMimeType = {
   "application/pdf": ".pdf",
+  [docxMimeType]: ".docx",
   "image/png": ".png",
   "image/jpeg": ".jpg",
   "image/webp": ".webp"
@@ -50,6 +52,18 @@ async function validateUploadedDocumentSignature(req, _res, next) {
   try {
     const detectedMimeType = await detectMimeTypeFromFile(req.file.path);
 
+    if (req.file.mimetype === docxMimeType) {
+      if (detectedMimeType !== "application/zip") {
+        await fs.unlink(req.file.path).catch(() => {});
+        next(new HttpError(400, "Invalid DOCX file."));
+        return;
+      }
+
+      await scanUploadedFileForMalware(req.file.path);
+      next();
+      return;
+    }
+
     if (detectedMimeType !== req.file.mimetype || !allowedMimeTypes.has(detectedMimeType)) {
       await fs.unlink(req.file.path).catch(() => {});
       next(new HttpError(400, "Невалидно файлово съдържание. Качи истински PDF, JPG, PNG или WebP файл."));
@@ -77,6 +91,7 @@ async function validateUploadedDocumentSignature(req, _res, next) {
 }
 
 module.exports = {
+  docxMimeType,
   ocrMimeTypes,
   uploadDocument,
   validateUploadedDocumentSignature

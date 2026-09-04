@@ -7,6 +7,7 @@ services:
     dockerfilePath: Dockerfile
     dockerContext: .
     dockerCommand: ./scripts/render-start.sh
+    healthCheckPath: /health
     disk:
       name: ocr-finance-backend-data
       mountPath: /var/data
@@ -22,8 +23,14 @@ services:
         sync: false
       - key: AUTH_SECRET
         generateValue: true
+      - key: DATA_ENCRYPTION_KEY
+        generateValue: true
       - key: AUTH_TOKEN_TTL_SECONDS
         value: 43200
+      - key: PUBLIC_DEMO_RATE_LIMIT_WINDOW_MS
+        value: 3600000
+      - key: PUBLIC_DEMO_RATE_LIMIT_MAX
+        value: 5
       - key: CORS_ORIGINS
         sync: false
       - key: STORAGE_BACKEND
@@ -56,7 +63,7 @@ services:
     env: static
     rootDir: frontend
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     staticPublishPath: build
     routes:
       - type: rewrite

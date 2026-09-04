@@ -11,8 +11,26 @@ function getAuthScope(req) {
   return `${companyId}:${userId}`;
 }
 
-function createRateLimiter({ name, windowMs, max, keyGenerator }) {
+function createRateLimiter({ name, windowMs, max, keyGenerator, maxBuckets = 10000 }) {
   const buckets = new Map();
+
+  function ensureBucketCapacity(now) {
+    if (buckets.size < maxBuckets) {
+      return;
+    }
+
+    for (const [bucketKey, bucket] of buckets) {
+      if (bucket.resetAt <= now) {
+        buckets.delete(bucketKey);
+      }
+    }
+
+    while (buckets.size >= maxBuckets) {
+      const oldestKey = buckets.keys().next().value;
+      if (oldestKey === undefined) break;
+      buckets.delete(oldestKey);
+    }
+  }
 
   return function rateLimiter(req, res, next) {
     const now = Date.now();
@@ -21,6 +39,7 @@ function createRateLimiter({ name, windowMs, max, keyGenerator }) {
     const current = buckets.get(key);
 
     if (!current || current.resetAt <= now) {
+      ensureBucketCapacity(now);
       const resetAt = now + windowMs;
       buckets.set(key, { count: 1, resetAt });
       res.setHeader("RateLimit-Limit", String(max));
@@ -55,6 +74,13 @@ const authRateLimit = createRateLimiter({
   keyGenerator: (req) => getIp(req)
 });
 
+const publicDemoRateLimit = createRateLimiter({
+  name: "public-demo",
+  windowMs: config.publicDemoRateLimitWindowMs,
+  max: config.publicDemoRateLimitMax,
+  keyGenerator: (req) => getIp(req)
+});
+
 const uploadRateLimit = createRateLimiter({
   name: "upload",
   windowMs: config.uploadRateLimitWindowMs,
@@ -81,5 +107,6 @@ module.exports = {
   createRateLimiter,
   exportRateLimit,
   extractRateLimit,
+  publicDemoRateLimit,
   uploadRateLimit
 };

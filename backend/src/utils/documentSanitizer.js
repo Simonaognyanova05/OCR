@@ -71,6 +71,8 @@ function sanitizeDocumentDataForStorage(documentData) {
     supplierVatNumber: sanitizeNullableText(documentData?.supplierVatNumber),
     recipientName: sanitizeNullableText(documentData?.recipientName, { nullIfGarbled: true }),
     recipientVatNumber: sanitizeNullableText(documentData?.recipientVatNumber),
+    personalName: sanitizeNullableText(documentData?.personalName, { nullIfGarbled: true }),
+    egn: sanitizeNullableText(documentData?.egn),
     totalAmount: sanitizeNullableNumber(documentData?.totalAmount),
     vatAmount: sanitizeNullableNumber(documentData?.vatAmount),
     netAmount: sanitizeNullableNumber(documentData?.netAmount),

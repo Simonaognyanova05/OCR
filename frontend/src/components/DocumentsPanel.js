@@ -1,4 +1,4 @@
-import { documentTypeLabels } from '../constants/labels';
+import { documentStatusLabels, documentTypeLabels } from '../constants/labels';
 import { initialDocumentFilters } from '../hooks/useDocuments';
 import styles from './DocumentsPanel.module.css';
 
@@ -43,7 +43,7 @@ function DocumentsPanel({
         <label className="field"><span>Сума до</span><input type="number" value={documentFilters.amountMax} onChange={(event) => onFilterChange({ ...documentFilters, amountMax: event.target.value })} /></label>
         <label className="field"><span>Валута</span><select value={documentFilters.currency} onChange={(event) => onFilterChange({ ...documentFilters, currency: event.target.value })}><option value="">Всички</option><option value="BGN">BGN</option><option value="EUR">EUR</option><option value="USD">USD</option></select></label>
         <label className="field"><span>Категория</span><input value={documentFilters.category} onChange={(event) => onFilterChange({ ...documentFilters, category: event.target.value })} /></label>
-        <label className="field"><span>Статус</span><select value={documentFilters.status} onChange={(event) => onFilterChange({ ...documentFilters, status: event.target.value })}><option value="">Всички</option><option value="uploaded">uploaded</option><option value="processing">processing</option><option value="needs_review">needs_review</option><option value="approved">approved</option><option value="exported">exported</option><option value="failed">failed</option></select></label>
+        <label className="field"><span>Статус</span><select value={documentFilters.status} onChange={(event) => onFilterChange({ ...documentFilters, status: event.target.value })}><option value="">Всички</option><option value="uploaded">качен</option><option value="processing">обработва се</option><option value="needs_review">за преглед</option><option value="approved">одобрен</option><option value="exported">експортиран</option><option value="failed">неуспешен</option></select></label>
         <label className="field"><span>Тип документ</span><select value={documentFilters.documentType} onChange={(event) => onFilterChange({ ...documentFilters, documentType: event.target.value })}><option value="">Всички</option><option value="invoice">Фактура</option><option value="receipt">Касова бележка</option></select></label>
       </div>
       <div className="actions">
@@ -79,7 +79,7 @@ function DocumentsPanel({
                 <td>{document.recipientName || '-'}</td>
                 <td>{document.totalAmount ?? '-'} {document.currency || ''}</td>
                 <td>{document.vatAmount ?? '-'}</td>
-                <td>{document.status}</td>
+                <td>{documentStatusLabels[document.status] || document.status}</td>
                 <td>{document.category || '-'}</td>
               </tr>
             ))}

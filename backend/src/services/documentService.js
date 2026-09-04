@@ -5,6 +5,7 @@ const { HttpError } = require("../utils/httpError");
 const { ocrMimeTypes } = require("../middleware/uploadMiddleware");
 const { cleanupPdfConversionOutput, convertPdfToImages } = require("./pdfConversionService");
 const { extractExpenseDocumentFromImages } = require("./ocrService");
+const { countCompanyContractsThisMonth } = require("./contractRepository");
 const { addWarning, applyReviewRules } = require("./reviewService");
 const {
   approveReviewedDocument,
@@ -253,9 +254,10 @@ function toSortedBreakdown(map, limit) {
 
 async function getDashboard(authContext) {
   const monthRange = getCurrentMonthRange();
-  const [documents, usedDocuments] = await Promise.all([
+  const [documents, usedExpenseDocuments, usedContracts] = await Promise.all([
     getCompanyDashboardDocuments(authContext.company._id, monthRange),
-    countCompanyDocumentsThisMonth(authContext.company._id)
+    countCompanyDocumentsThisMonth(authContext.company._id),
+    countCompanyContractsThisMonth(authContext.company._id)
   ]);
   const suppliers = new Map();
   const categories = new Map();
@@ -263,6 +265,7 @@ async function getDashboard(authContext) {
   let totalExpenses = 0;
   let totalVat = 0;
   const documentLimit = authContext.company.documentLimit;
+  const usedDocuments = usedExpenseDocuments + usedContracts;
 
   for (const document of documents) {
     const data = document.data || {};
