@@ -1,12 +1,135 @@
 const Document = require("../models/Document");
 const { HttpError } = require("../utils/httpError");
 const { sanitizeDocumentDataForStorage } = require("../utils/documentSanitizer");
+const { decryptFields, encryptFields } = require("../utils/fieldEncryption");
 
 const documentStatuses = new Set(["uploaded", "processing", "needs_review", "approved", "exported", "failed"]);
 const documentTypes = new Set(["invoice", "receipt", "other"]);
 const currencies = new Set(["BGN", "EUR", "USD"]);
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 const maxTextFilterLength = 80;
+const protectedDocumentDataFields = new Set(["personalName", "egn"]);
+
+function encryptDocumentData(data) {
+  return encryptFields(data, protectedDocumentDataFields);
+}
+
+function decryptDocumentData(data) {
+  return decryptFields(data, protectedDocumentDataFields);
+}
+function buildProtectedFileEndpoint(documentId) {
+  return `/api/documents/${documentId.toString()}/file`;
+}
+
+function parsePositiveInteger(value, fallback, max) {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 1) {
+    throw new HttpError(400, "Invalid pagination value.");
+  }
+
+  return Math.min(number, max);
+}
+
+function parseAmountFilter(value, name) {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    throw new HttpError(400, `Invalid ${name} filter.`);
+  }
+
+  return number;
+}
+
+function assertAllowedValue(value, allowedValues, name) {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+  if (!allowedValues.has(normalized)) {
+    throw new HttpError(400, `Invalid ${name} filter.`);
+  }
+
+  return normalized;
+}
+
+function assertIsoDate(value, name) {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+  if (!isoDatePattern.test(normalized)) {
+    throw new HttpError(400, `Invalid ${name} filter.`);
+  }
+
+  const [year, month, day] = normalized.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    throw new HttpError(400, `Invalid ${name} filter.`);
+  }
+
+  return normalized;
+}
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeTextFilter(value, name) {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+  if (normalized.length > maxTextFilterLength) {
+    throw new HttpError(400, `${name} filter is too long.`);
+  }
+
+  return normalized;
+}
+
+function normalizeDocumentListFilters(filters = {}) {
+  const normalized = {
+    page: parsePositiveInteger(filters.page, 1, Number.MAX_SAFE_INTEGER),
+    limit: parsePositiveInteger(filters.limit, 50, 100),
+    status: assertAllowedValue(filters.status, documentStatuses, "status"),
+    documentType: assertAllowedValue(filters.documentType, documentTypes, "documentType"),
+    currency: assertAllowedValue(filters.currency, currencies, "currency"),
+    category: normalizeTextFilter(filters.category, "category"),
+    supplier: normalizeTextFilter(filters.supplier, "supplier"),
+    recipient: normalizeTextFilter(filters.recipient, "recipient"),
+    dateFrom: assertIsoDate(filters.dateFrom, "dateFrom"),
+    dateTo: assertIsoDate(filters.dateTo, "dateTo"),
+    amountMin: parseAmountFilter(filters.amountMin, "amountMin"),
+    amountMax: parseAmountFilter(filters.amountMax, "amountMax")
+  };
+
+  if (normalized.dateFrom && normalized.dateTo && normalized.dateFrom > normalized.dateTo) {
+    throw new HttpError(400, "Invalid date range.");
+  }
+
+  if (
+    normalized.amountMin !== undefined &&
+    normalized.amountMax !== undefined &&
+    normalized.amountMin > normalized.amountMax
+  ) {
+    throw new HttpError(400, "Invalid amount range.");
+  }
+
+  return normalized;
+}
 
 function assertTenantScope(companyId) {
   if (companyId === undefined || companyId === null || companyId === "") {
@@ -15,6 +138,8 @@ function assertTenantScope(companyId) {
 }
 
 function toApiDocument(document) {
+  const data = decryptDocumentData(document.data);
+
   return {
     id: document._id.toString(),
     company_id: document.companyId.toString(),
@@ -35,12 +160,12 @@ function toApiDocument(document) {
     reviewed_at: document.reviewedAt ? document.reviewedAt.toISOString() : undefined,
     created_at: document.createdAt?.toISOString(),
     updated_at: document.updatedAt?.toISOString(),
-    data: document.data
+    data
   };
 }
 
 function toApiDocumentListItem(document) {
-  const data = document.data || {};
+  const data = decryptDocumentData(document.data) || {};
 
   return {
     id: document._id.toString(),
@@ -250,6 +375,7 @@ async function updateExtractedDocument(documentId, companyId, payload) {
   assertTenantScope(companyId);
 
   const sanitizedData = sanitizeDocumentDataForStorage(payload.data);
+  const protectedData = encryptDocumentData(sanitizedData);
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId },
     {
@@ -262,7 +388,7 @@ async function updateExtractedDocument(documentId, companyId, payload) {
         failedAt: null,
         failureCode: null,
         failureMessage: null,
-        data: sanitizedData
+        data: protectedData
       }
     },
     { new: true, runValidators: true }
@@ -279,6 +405,7 @@ async function updateReviewedDocument(documentId, reviewedData, companyId) {
   assertTenantScope(companyId);
 
   const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
+  const protectedData = encryptDocumentData(sanitizedData);
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId },
     {
@@ -286,7 +413,7 @@ async function updateReviewedDocument(documentId, reviewedData, companyId) {
         status: "needs_review",
         reviewedAt: new Date(),
         documentType: sanitizedData.documentType || null,
-        data: sanitizedData
+        data: protectedData
       }
     },
     { new: true, runValidators: true }
@@ -303,6 +430,11 @@ async function approveReviewedDocument(documentId, reviewedData, companyId) {
   assertTenantScope(companyId);
 
   const sanitizedData = sanitizeDocumentDataForStorage(reviewedData);
+  const protectedData = encryptDocumentData({
+    ...sanitizedData,
+    needsReview: false,
+    reviewReasons: []
+  });
   const document = await Document.findOneAndUpdate(
     { _id: documentId, companyId, status: "needs_review" },
     {
@@ -310,11 +442,7 @@ async function approveReviewedDocument(documentId, reviewedData, companyId) {
         status: "approved",
         reviewedAt: new Date(),
         documentType: sanitizedData.documentType || null,
-        data: {
-          ...sanitizedData,
-          needsReview: false,
-          reviewReasons: []
-        }
+        data: protectedData
       }
     },
     { new: true, runValidators: true }
@@ -360,6 +488,8 @@ module.exports = {
   approveReviewedDocument,
   countCompanyDocumentsThisMonth,
   createUploadedDocument,
+  decryptDocumentData,
+  encryptDocumentData,
   findDocumentFileById,
   findDocumentById,
   findPotentialDuplicateDocument,

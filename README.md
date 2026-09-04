@@ -134,3 +134,25 @@ REACT_APP_API_URL=https://ocr-finance-backend.onrender.com
 Render filesystem-ът не е постоянен storage. За production файловете от `uploads/` и `outputs/` трябва да се преместят към S3, Cloudinary или друг object storage.
 
 За MVP deploy е достатъчно, но при restart/redeploy качените файлове може да се изгубят.
+
+## Production release runbook
+
+Before deploying:
+
+1. Run all backend tests, all frontend tests, the frontend production build, and both dependency audits.
+2. Deploy only from a reviewed, clean, committed branch. Record the commit SHA.
+3. Set OPENAI_API_KEY, MONGODB_URI, and the exact CORS_ORIGINS in Render.
+4. Set frontend REACT_APP_API_URL and REACT_APP_SITE_URL, then rebuild the static service.
+5. Confirm Render generated strong AUTH_SECRET and DATA_ENCRYPTION_KEY; back them up securely because changing the encryption key makes encrypted OCR fields unreadable.
+6. Restrict MongoDB Atlas network access and use a least-privilege application user. Enable automated backups and perform a restore test.
+7. Confirm the private Render disk is mounted at /var/data, then monitor disk usage. Uploaded source files expire after the configured retention period.
+8. Verify ClamAV starts with a current signature database and that an unavailable scanner makes uploads fail closed.
+9. Smoke-test registration, login, public demo, authenticated upload, OCR, review, approval, protected preview, exports, dashboard, contracts, and cross-company denial.
+10. Configure external uptime/error alerts for /health and backend 5xx responses.
+
+Rollback:
+
+1. In Render, redeploy the previously recorded healthy commit for both services.
+2. Do not rotate DATA_ENCRYPTION_KEY during an application rollback.
+3. If a database change is ever introduced, take an Atlas snapshot first and document its compatible application versions.
+4. After rollback, verify /health, login, protected file access, and one non-destructive document read.

@@ -47,6 +47,12 @@
   margin-top: 22px;
 }
 
+:global(.dashboard-actions) {
+  display: flex;
+  justify-content: flex-end;
+  margin: 16px 0 0;
+}
+
 :global(.dashboard-breakdowns) section {
   border: 1px solid var(--line);
   border-radius: 8px;

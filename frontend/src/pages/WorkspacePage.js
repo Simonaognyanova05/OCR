@@ -4,12 +4,14 @@ import styles from './WorkspacePage.module.css';
 
 function WorkspacePage({
   dragActive,
+  documentKind,
   draft,
   error,
   file,
   loading,
   notice,
   onApprove,
+  onDocumentKindChange,
   onDownloadExport,
   onDragLeave,
   onDragOver,
@@ -36,11 +38,13 @@ function WorkspacePage({
 
       <section className={`${styles.moduleRoot} workspace`}>
         <UploadPanel
+          documentKind={documentKind}
           dragActive={dragActive}
           error={error}
           file={file}
           loading={loading}
           notice={notice}
+          onDocumentKindChange={onDocumentKindChange}
           onDownloadExport={onDownloadExport}
           onDragLeave={onDragLeave}
           onDragOver={onDragOver}

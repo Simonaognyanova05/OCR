@@ -9,6 +9,8 @@ const expenseDocumentSchema = {
     "supplierVatNumber",
     "recipientName",
     "recipientVatNumber",
+    "personalName",
+    "egn",
     "totalAmount",
     "vatAmount",
     "netAmount",
@@ -32,6 +34,14 @@ const expenseDocumentSchema = {
     supplierVatNumber: { type: ["string", "null"] },
     recipientName: { type: ["string", "null"] },
     recipientVatNumber: { type: ["string", "null"] },
+    personalName: {
+      type: ["string", "null"],
+      description: "Natural person full name when clearly visible. Use null when absent."
+    },
+    egn: {
+      type: ["string", "null"],
+      description: "Bulgarian EGN when clearly visible. Use null when absent."
+    },
     totalAmount: { type: ["number", "null"] },
     vatAmount: { type: ["number", "null"] },
     netAmount: { type: ["number", "null"] },

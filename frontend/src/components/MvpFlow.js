@@ -4,7 +4,7 @@ function MvpFlow() {
       <span>1. Качване</span>
       <span>2. OCR / AI извличане</span>
       <span>3. Преглед</span>
-      <span className="muted">4. Approve document</span>
+      <span className="muted">4. Одобрение</span>
     </section>
   );
 }
