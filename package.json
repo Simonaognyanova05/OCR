@@ -10,5 +10,8 @@
     "frontend:build": "npm run build --prefix frontend",
     "test:backend": "npm test --prefix backend",
     "test:frontend": "npm test --prefix frontend -- --watchAll=false"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
