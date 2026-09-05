@@ -97,10 +97,10 @@ function AppShell({ auth, health, onLogout }) {
         </nav>
 
         <div className="sidebar-account">
-          <div className="account-avatar" aria-hidden="true">{auth.user?.email?.slice(0, 1).toUpperCase() || 'U'}</div>
+          <div className="account-avatar" aria-hidden="true">P</div>
           <div>
-            <strong>{auth.user?.email}</strong>
-            <span>{auth.membership?.role || 'user'}</span>
+            <strong>pointsmart909@gmail.com</strong>
+            <span>owner</span>
           </div>
         </div>
       </aside>

@@ -131,7 +131,7 @@ summary:focus-visible {
 }
 
 .sidebar .brand strong {
-  color: #fff;
+  color: #111b31;
   font-size: 16px;
 }
 
@@ -1158,13 +1158,13 @@ pre,
 }
 
 .sidebar-account strong {
-  color: #e9eef8;
+  color: #111b31;
   font-size: 12px;
 }
 
 .sidebar-account span {
   margin-top: 2px;
-  color: #8493ac;
+  color: #526078;
   font-size: 11px;
   text-transform: capitalize;
 }
